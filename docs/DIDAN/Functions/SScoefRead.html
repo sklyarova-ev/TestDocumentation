@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of SScoefRead</title>
+  <meta name="keywords" content="SScoefRead">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">DIDAN</a> &gt; <a href="index.html">Functions</a> &gt; SScoefRead.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for DIDAN\Functions&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>SScoefRead
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function [coef,vtau]=SScoefRead(filename) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"></pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [coef,vtau]=SScoefRead(filename)</a>
+0002 id=fopen(filename);
+0003 g=fscanf(id,<span class="string">'%s'</span>);
+0004 g=g(2:end);
+0005     count=1;
+0006     <span class="keyword">while</span> (g(count)~=<span class="string">'}'</span>)
+0007        count=count+1;
+0008     <span class="keyword">end</span>
+0009     l=1;
+0010     num=1;
+0011     coef=zeros(46,1);
+0012     <span class="keyword">for</span> i=1:count
+0013         <span class="keyword">if</span> (g(i)==<span class="string">','</span> || g(i)==<span class="string">'}'</span>)
+0014            k=1;
+0015            <span class="keyword">while</span> k~=5
+0016                 <span class="keyword">if</span> (g(i-k)==<span class="string">'^'</span>)
+0017                     coef(num)=str2double(g(l:i-k-2))*10^(str2double(g(i-k+1:i-1))); 
+0018                     k=5;
+0019                 <span class="keyword">else</span>
+0020                     coef(num)=str2double(g(l:i-1));
+0021                     k=k+1;
+0022                 <span class="keyword">end</span>
+0023             <span class="keyword">end</span>
+0024             num=num+1;
+0025             l=i+1;
+0026         <span class="keyword">end</span>
+0027     <span class="keyword">end</span>
+0028 vtau=coef(17:21);
+0029 vtau=sort(vtau);
+0030 fclose(id);</pre></div>
+<hr><address>Generated on Tue 21-Sep-2021 01:27:30 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
