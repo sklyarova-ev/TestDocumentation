@@ -1,0 +1,484 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of EigProbSol</title>
+  <meta name="keywords" content="EigProbSol">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">DIDAN</a> &gt; <a href="index.html">Functions</a> &gt; EigProbSol.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for DIDAN\Functions&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>EigProbSol
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function [Ei,Xi,resEi]=EigProbSol(RHS,Uss,coef,vtau,aoev,Esolver,deflation,addinf2,ind,ifig) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Latest revision 05.11.2019 
+
+ Вычисление собственных значений и векторов
+
+ Внешние процедуры: Matrices
+
+ Внутренние процедуры: dAdz, DEFL, EigenEstimator, EigenSolver, formAz,
+                       formdAdz, SFMlight, SLPM
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ ВХОДНЫЕ ПАРАМЕТРЫ:
+ Uss - стационарное состояние
+ coef,vtau - параметры модели
+
+ aoev - число собственных значений, которые необходимо найти
+ Esolver - решатель частичных линейных проблем
+ deflation - режим дефляции
+
+ addinf2 - информация о потери ведущего собственного значения (0/1)
+           + пошаговой информации о работе решателей частичных проблем (2)
+
+ ind - нужно ли отрисовывать собственные значения на комплексной плоскости
+ nss - номер стационарного состояния
+ ifig - номер рисунка, 
+
+ ВЫХОДНЫЕ ПАРАМЕТРЫ:
+ Ei - собственные значения,
+ Xi - собственные вектора,
+ resEi - погрешность вычисления собственных значений
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="Matrices.html" class="code" title="function [L,CM,M]=Matrices(RHS,Uss,coef,delta,vtau,scheme)">Matrices</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="../../DIDAN/StStatesAnalysis.html" class="code" title="function [SS,Resid,EiVals,EiVects]=StStatesAnalysis(coef, delays, RHS, SSFinder, resFile)">StStatesAnalysis</a>	StStatesAnalysis  Analyzes steady states of a viral infection model with delayed immune response</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [Lambda,X]=EigenEstimator(RHS,Uss,coef,vtau,ne)</a></li><li><a href="#_sub2" class="code">function [Lambda,X,maxresLambda]=EigenSolver(RHS,Uss,coef,vtau,z0s,ieig,Esolver,</a></li><li><a href="#_sub3" class="code">function [z,f,x,infrm]=SFMlight(L,vtau,X,S,z0,R,</a></li><li><a href="#_sub4" class="code">function [z,res,x,infrm]=SLPM(L,vtau,X,S,z0,R,deflation,lmaxlp,resmin,addinf)</a></li><li><a href="#_sub5" class="code">function [A,P,Sz,XSz,XS,XS2]=DEFL(L,vtau,z,X,S,deflation)</a></li><li><a href="#_sub6" class="code">function [A]=formAz(L,vtau,z)</a></li><li><a href="#_sub7" class="code">function [v]=dAdz(L,vtau,z,x)</a></li><li><a href="#_sub8" class="code">function [B]=formdAdz(L,vtau,z)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Ei,Xi,resEi]=EigProbSol(RHS,Uss,coef,vtau,aoev,Esolver,deflation,addinf2,ind,ifig)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Latest revision 05.11.2019</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Вычисление собственных значений и векторов</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Внешние процедуры: Matrices</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Внутренние процедуры: dAdz, DEFL, EigenEstimator, EigenSolver, formAz,</span>
+0010 <span class="comment">%                       formdAdz, SFMlight, SLPM</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0013 <span class="comment">% ВХОДНЫЕ ПАРАМЕТРЫ:</span>
+0014 <span class="comment">% Uss - стационарное состояние</span>
+0015 <span class="comment">% coef,vtau - параметры модели</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% aoev - число собственных значений, которые необходимо найти</span>
+0018 <span class="comment">% Esolver - решатель частичных линейных проблем</span>
+0019 <span class="comment">% deflation - режим дефляции</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% addinf2 - информация о потери ведущего собственного значения (0/1)</span>
+0022 <span class="comment">%           + пошаговой информации о работе решателей частичных проблем (2)</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% ind - нужно ли отрисовывать собственные значения на комплексной плоскости</span>
+0025 <span class="comment">% nss - номер стационарного состояния</span>
+0026 <span class="comment">% ifig - номер рисунка,</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% ВЫХОДНЫЕ ПАРАМЕТРЫ:</span>
+0029 <span class="comment">% Ei - собственные значения,</span>
+0030 <span class="comment">% Xi - собственные вектора,</span>
+0031 <span class="comment">% resEi - погрешность вычисления собственных значений</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0034 <span class="comment">%</span>
+0035 vtau = sort(vtau); 
+0036 [Ei,~]=<a href="#_sub1" class="code" title="subfunction [Lambda,X]=EigenEstimator(RHS,Uss,coef,vtau,ne)">EigenEstimator</a>(RHS,Uss,coef,vtau,[1:aoev]);
+0037 [Ei,Xi,resEi]=<a href="#_sub2" class="code" title="subfunction [Lambda,X,maxresLambda]=EigenSolver(RHS,Uss,coef,vtau,z0s,ieig,Esolver,">EigenSolver</a>(RHS,Uss,coef,vtau,Ei,0,Esolver,deflation,addinf2);
+0038 
+0039 <span class="comment">%Отрисовка собственных значений</span>
+0040 <span class="keyword">if</span> ind==1
+0041     figure(ifig)
+0042         plot(real(Ei),imag(Ei),<span class="string">'bx'</span>)
+0043         title(<span class="string">'$\Lambda$'</span>,<span class="string">'Interpreter'</span>,<span class="string">'latex'</span>); 
+0044         hold on
+0045 <span class="keyword">end</span>
+0046 
+0047     
+0048 <a name="_sub1" href="#_subfunctions" class="code">function [Lambda,X]=EigenEstimator(RHS,Uss,coef,vtau,ne)</a>
+0049 <span class="comment">%</span>
+0050 <span class="comment">% Latest revision 02.01.2018</span>
+0051 <span class="comment">%</span>
+0052 <span class="comment">%</span>
+0053 delta=1.0e-2; <span class="comment">% шаг сетки</span>
+0054 scheme=2; <span class="comment">% схема интегрирования: 1 - неявный метод Эйлера,</span>
+0055           <span class="comment">%                       2 - BDF2.</span>
+0056 
+0057 [~,~,M]=<a href="Matrices.html" class="code" title="function [L,CM,M]=Matrices(RHS,Uss,coef,delta,vtau,scheme)">Matrices</a>(RHS,Uss,coef,delta,vtau,scheme);
+0058 <span class="comment">%</span>
+0059 [X,Mu]=eig(full(M));
+0060 Mu=diag(Mu);
+0061 X=X(:,Mu~=0);
+0062 Mu=Mu(Mu~=0);
+0063 Lambda=log(Mu)/delta;
+0064 [~,se]=sort(real(Lambda),<span class="string">'descend'</span>);
+0065 Lambda=Lambda(se);
+0066 Mu=Mu(se);
+0067 disp(<span class="string">'Mu'</span>);
+0068 disp(Mu(1:4));
+0069 X=X(:,se);
+0070 <span class="comment">%</span>
+0071 <span class="comment">% Вычисление невязок для Mu:</span>
+0072 <span class="comment">%Mu=Mu(ne);</span>
+0073 X=X(:,ne);
+0074 <span class="comment">%for j=1:length(ne)</span>
+0075 <span class="comment">%   fprintf(1,'ne=%d, Mu=%g+%gi\n',ne(j),real(Mu(j)),imag(Mu(j)));</span>
+0076 <span class="comment">%   X(:,j)=X(:,j)/norm(X(:,j));</span>
+0077 <span class="comment">%   fprintf(1,'SpectrRes_Mu=%d\n',norm(full(M*X(:,j))-Mu(j)*X(:,j)));</span>
+0078 <span class="comment">%end</span>
+0079 <span class="comment">%</span>
+0080 Lambda=Lambda(ne);
+0081 X=X(1:4,:);
+0082 <span class="comment">% Вычисление невязок для Lambda:</span>
+0083 <span class="comment">%resLambda=zeros(size(Lambda));</span>
+0084 <span class="keyword">for</span> k=1:length(Lambda)
+0085    X(:,k)=X(:,k)/norm(X(:,k));
+0086 <span class="comment">%   resLambda(k)=norm(formAz(MATR,Lambda(k))*X(:,k),2);</span>
+0087 <span class="keyword">end</span>
+0088 <span class="comment">%maxresLambda=max(resLambda);</span>
+0089 
+0090 
+0091 <a name="_sub2" href="#_subfunctions" class="code">function [Lambda,X,maxresLambda]=EigenSolver(RHS,Uss,coef,vtau,z0s,ieig,Esolver,</a><span class="keyword">...</span>
+0092                                                           deflation,addinf)
+0093 <span class="comment">%</span>
+0094 <span class="comment">% Latest revision 22.01.2018</span>
+0095 <span class="comment">%</span>
+0096 R=10.0; 
+0097 <span class="comment">%</span>
+0098 <span class="comment">% SFM parameters:</span>
+0099 lmaxsf=25;   
+0100 fmin=1.0e-28; 
+0101 ld0=1;  <span class="comment">%damper=qdamp*exp(-pdamp*ld)</span>
+0102 ldmax=8;     
+0103 pdamp=2.0;          
+0104 qdamp=2.0;
+0105 <span class="comment">%</span>
+0106 <span class="comment">% SLP parameters:</span>
+0107 lmaxlp=10;   
+0108 resmin=1.0e-12; 
+0109 <span class="comment">%</span>
+0110 [L,~,~]=<a href="Matrices.html" class="code" title="function [L,CM,M]=Matrices(RHS,Uss,coef,delta,vtau,scheme)">Matrices</a>(RHS, Uss,coef,1,vtau,1);
+0111 n=size(L{1,1},1);
+0112 X=[];
+0113 S=[];
+0114 <span class="comment">%</span>
+0115 nz0=size(z0s,1);
+0116 m=0;
+0117 k=1;
+0118 <span class="keyword">while</span>(k&lt;=nz0)
+0119    <span class="keyword">switch</span> Esolver
+0120       <span class="keyword">case</span> 1 
+0121       [z,~,x,infrm]=<a href="#_sub3" class="code" title="subfunction [z,f,x,infrm]=SFMlight(L,vtau,X,S,z0,R,">SFMlight</a>(L,vtau,X,S,z0s(k),R,<span class="keyword">...</span>
+0122                     deflation,lmaxsf,fmin,ld0,ldmax,pdamp,qdamp,addinf);
+0123 <span class="comment">%  infrm=0   no eigenvalues are found for lmaxsf steps</span>
+0124 <span class="comment">%  infrm=1   an eigenvalue is found</span>
+0125 <span class="comment">%  infrm=10  gradf(z)=0</span>
+0126 <span class="comment">%  infrm=20  ldamp&gt;ldmax</span>
+0127 <span class="comment">%  infrm=30  computed z is out of region z: |z-z0|&lt;=R</span>
+0128       <span class="keyword">case</span> 2 
+0129       [z,~,x,infrm]=<a href="#_sub4" class="code" title="subfunction [z,res,x,infrm]=SLPM(L,vtau,X,S,z0,R,deflation,lmaxlp,resmin,addinf)">SLPM</a>(L,vtau,X,S,z0s(k),R,deflation,lmaxlp,resmin,addinf);
+0130 <span class="comment">%  infrm=0   no eigenvalues are found for lmaxlp steps</span>
+0131 <span class="comment">%  infrm=1   an eigenvalue is found</span>
+0132 <span class="comment">%  infrm=30  computed z is out of region z: |z-z0|&lt;=R</span>
+0133    <span class="keyword">end</span>
+0134    <span class="keyword">if</span>(addinf&gt;0)
+0135       fprintf(1,<span class="string">'Причина останова infrm=%g\n'</span>,infrm);       
+0136    <span class="keyword">end</span>   
+0137    <span class="keyword">if</span>(infrm==1||ieig==0)
+0138       nx=norm(x(1:n),2);
+0139       X=[X,x(1:n)/nx];
+0140       <span class="keyword">if</span>(deflation~=0)
+0141          S=[S,x(n+1:end)/nx;zeros(1,m),z];
+0142       <span class="keyword">else</span>  
+0143          S=blkdiag(S,z);
+0144       <span class="keyword">end</span>
+0145       m=m+1;
+0146    <span class="keyword">end</span>
+0147    k=k+1;
+0148 <span class="keyword">end</span>
+0149 [XS,ES]=eig(S);
+0150 Lambda=diag(ES);
+0151 [~,se]=sort(real(Lambda),<span class="string">'descend'</span>);
+0152 Lambda=Lambda(se);
+0153 XS=XS(:,se);
+0154 X=X*XS; 
+0155 <span class="comment">%</span>
+0156 <span class="comment">% Вычисление невязок:</span>
+0157 resLambda=zeros(size(Lambda));
+0158 <span class="keyword">for</span> k=1:length(Lambda)
+0159    X(:,k)=X(:,k)/norm(X(:,k));
+0160    resLambda(k)=norm(<a href="#_sub6" class="code" title="subfunction [A]=formAz(L,vtau,z)">formAz</a>(L,vtau,Lambda(k))*X(:,k),2);
+0161 <span class="keyword">end</span>
+0162 maxresLambda=max(resLambda);
+0163 
+0164 <a name="_sub3" href="#_subfunctions" class="code">function [z,f,x,infrm]=SFMlight(L,vtau,X,S,z0,R,</a><span class="keyword">...</span><span class="comment"> </span>
+0165                         deflation,lmaxsf,fmin,ld0,ldmax,pdamp,qdamp,addinf)
+0166 <span class="comment">%</span>
+0167 <span class="comment">% Latest revision 22.01.2018</span>
+0168 <span class="comment">%</span>
+0169 ldamp=ld0+1;
+0170 l=1;
+0171 z=z0;
+0172 m=size(S,1);
+0173 n=size(L{1,1},1);
+0174 fold=0;
+0175 <span class="keyword">while</span> (l&lt;=lmaxsf+1)
+0176 <span class="comment">% для текущего z вычисляем f и x</span>
+0177    [A,P,Sz,XSz,XS,XS2]=<a href="#_sub5" class="code" title="subfunction [A,P,Sz,XSz,XS,XS2]=DEFL(L,vtau,z,X,S,deflation)">DEFL</a>(L,vtau,z,X,S,deflation);
+0178    [~,~,VV]=svd(A);
+0179    x=VV(:,end);
+0180    Ax=A*x;
+0181    f=norm(Ax,2)^2;
+0182    am2=max(abs(A(:)))^2;
+0183    <span class="keyword">if</span>(addinf&gt;0) 
+0184       fprintf(1,<span class="string">'l=%g, ldamp=%g, z=%g, f=%g, am2=%g, m=%g\n'</span>,<span class="keyword">...</span>
+0185                                                         l,ldamp,z,f,am2,m);  
+0186    <span class="keyword">end</span>
+0187 <span class="comment">% проверяем достижение заданной точности:</span>
+0188    <span class="keyword">if</span>(f&lt;=am2*fmin)
+0189       infrm=1; <span class="comment">% заданная точность достигнута</span>
+0190       <span class="keyword">return</span>
+0191    <span class="keyword">end</span>
+0192 <span class="comment">% проверяем успешность шага:</span>
+0193    flag=f&lt;fold||l==1;
+0194    <span class="keyword">if</span>(flag)
+0195       zold=z;
+0196       fold=f;
+0197       xold=x;
+0198    <span class="keyword">end</span>   
+0199 <span class="comment">% проверяем не достигнуто ли максимальное колличесво шагов:</span>
+0200    <span class="keyword">if</span>(l&gt;lmaxsf)
+0201       z=zold;
+0202       f=fold;
+0203       x=xold;
+0204       infrm=0; <span class="comment">% достигнуто максимальное колличество шагов, но</span>
+0205       <span class="keyword">return</span>   <span class="comment">% заданная точность не достигнута</span>
+0206    <span class="keyword">end</span> 
+0207 <span class="comment">% формируем новый шаг SFM:</span>
+0208    <span class="keyword">if</span>(flag)
+0209       v=<a href="#_sub7" class="code" title="subfunction [v]=dAdz(L,vtau,z,x)">dAdz</a>(L,vtau,z,x(1:n)); <span class="comment">% v=dA(z)/dz*x</span>
+0210       <span class="keyword">if</span>(m&gt;0&amp;&amp;deflation~=0)
+0211          xx=x(n+1:end);
+0212          <span class="keyword">if</span>(deflation==-1)
+0213             v=[v;zeros(m,1)]; 
+0214          <span class="keyword">else</span>  
+0215             <span class="keyword">if</span>(deflation==1)
+0216                vv=zeros(m,1); 
+0217             <span class="keyword">elseif</span>(deflation==2)
+0218                vv=XS'*x(1:n); 
+0219             <span class="keyword">elseif</span>(deflation==3) 
+0220                vv=XS'*x(1:n)+2*z*(XS2'*x(1:n))+XS2'*(X*xx); 
+0221             <span class="keyword">end</span> 
+0222             v=[v+<a href="#_sub7" class="code" title="subfunction [v]=dAdz(L,vtau,z,x)">dAdz</a>(L,vtau,z,XSz*xx)-P*(XSz*(Sz\xx));vv];
+0223          <span class="keyword">end</span>   
+0224       <span class="keyword">end</span>   
+0225       gradf=2.0*(v'*Ax);
+0226       gfr=gradf; 
+0227       agfr=abs(gfr);
+0228 <span class="comment">% проверяем неравенство нулю градиента:</span>
+0229       <span class="keyword">if</span>(agfr==0.0) 
+0230          infrm=10; <span class="comment">% градиент равен нулю</span>
+0231          <span class="keyword">return</span>    <span class="comment">% заданная точность не достигнута</span>
+0232       <span class="keyword">else</span>
+0233          step=f/agfr;
+0234          gfrdir=gfr/agfr;
+0235          ldamp=max(ldamp-1,0);
+0236       <span class="keyword">end</span> 
+0237    <span class="keyword">else</span>
+0238 <span class="comment">% будем шагать с меньшим демпфером:</span>
+0239       ldamp=ldamp+1;
+0240       <span class="keyword">if</span>(ldamp&gt;ldmax)
+0241          z=zold;
+0242          f=fold;
+0243          x=xold; 
+0244          infrm=20; <span class="comment">% возможность уменьшения демпфера исчерпана</span>
+0245          <span class="keyword">return</span>
+0246       <span class="keyword">end</span>   
+0247    <span class="keyword">end</span>
+0248 <span class="comment">% шагаем:</span>
+0249    damper=qdamp*exp(-pdamp*ldamp);
+0250    z=zold-damper*step*gfrdir;
+0251 <span class="comment">% проверяем не выскочили ли за пределы заданной области:</span>
+0252    <span class="keyword">if</span>(abs(z-z0)&gt;R)
+0253       z=zold;
+0254       f=fold;
+0255       x=xold; 
+0256       infrm=30; <span class="comment">% выскочили за пределы заданной области</span>
+0257       <span class="keyword">return</span>
+0258    <span class="keyword">end</span>
+0259    l=l+1;    
+0260 <span class="keyword">end</span>
+0261 <span class="comment">%</span>
+0262 <a name="_sub4" href="#_subfunctions" class="code">function [z,res,x,infrm]=SLPM(L,vtau,X,S,z0,R,deflation,lmaxlp,resmin,addinf)</a>
+0263 <span class="comment">%</span>
+0264 <span class="comment">% Latest revision 24.01.2018</span>
+0265 <span class="comment">%</span>
+0266 l=1;
+0267 z=z0;
+0268 m=size(S,1);
+0269 n=size(L{1,1},1);
+0270 res=Inf;
+0271 x=[];
+0272 <span class="keyword">if</span>(addinf&gt;0) 
+0273    fprintf(1,<span class="string">'l=%g, z=%g, m=%g\n'</span>,l,z,m);  
+0274 <span class="keyword">end</span>   
+0275 <span class="keyword">while</span>(l&lt;=lmaxlp+1)
+0276 <span class="comment">% формируем A(z):</span>
+0277    [A,P,Sz,XSz,XS,XS2]=<a href="#_sub5" class="code" title="subfunction [A,P,Sz,XSz,XS,XS2]=DEFL(L,vtau,z,X,S,deflation)">DEFL</a>(L,vtau,z,X,S,deflation);
+0278    <span class="keyword">if</span>(l&gt;1)
+0279       res=norm(A*x,2); 
+0280       am=max(abs(A(:)));
+0281       <span class="keyword">if</span>(addinf&gt;0) 
+0282          fprintf(1,<span class="string">'l=%g, z=%g, res=%g, am=%g, m=%g\n'</span>,l,z,res,am,m);  
+0283       <span class="keyword">end</span>   
+0284 <span class="comment">% проверяем достижение заданной точности:</span>
+0285       <span class="keyword">if</span>(res&lt;=am*resmin)
+0286          infrm=1; <span class="comment">% заданная точность достигнута</span>
+0287          <span class="keyword">return</span>
+0288       <span class="keyword">end</span>
+0289 <span class="comment">% проверяем не достигнуто ли максимальное колличесво шагов:</span>
+0290       <span class="keyword">if</span>(l&gt;lmaxlp)
+0291          infrm=0; <span class="comment">% достигнуто максимальное колличество шагов, но</span>
+0292          <span class="keyword">return</span>   <span class="comment">% заданная точность не достигнута</span>
+0293       <span class="keyword">end</span>       
+0294    <span class="keyword">end</span> 
+0295 <span class="comment">% формируем B=dA/dz(z):</span>
+0296    B=<a href="#_sub8" class="code" title="subfunction [B]=formdAdz(L,vtau,z)">formdAdz</a>(L,vtau,z);
+0297    <span class="keyword">if</span>(m&gt;0&amp;&amp;deflation~=0)
+0298       C=zeros(m,n);D=zeros(m,m);E=zeros(n,m);
+0299       <span class="keyword">if</span>(deflation&gt;0)
+0300          E=B*XSz-P*(XSz/Sz);
+0301          <span class="keyword">if</span>(deflation==2)
+0302             C=XS';
+0303          <span class="keyword">elseif</span>(deflation==3) 
+0304             C=XS'+2*z*XS2'; D=XS2'*X;
+0305          <span class="keyword">end</span>        
+0306       <span class="keyword">end</span>
+0307       B=[B,E;C,D];
+0308    <span class="keyword">end</span> 
+0309 <span class="comment">% решаем линейную проблему:</span>
+0310    [u,e]=eig(A,-B); 
+0311    e=diag(e);
+0312    [~,se]=sort(abs(e),<span class="string">'ascend'</span>); 
+0313    e=e(se(1));
+0314 <span class="comment">% делаем шаг и проверяем не выскочили ли за пределы заданной области:</span>
+0315    z=z+e; 
+0316    <span class="keyword">if</span>(abs(z-z0)&gt;R&amp;&amp;l&gt;1)
+0317       z=z-e;
+0318       infrm=30; <span class="comment">% выскочили за пределы заданной области</span>
+0319       <span class="keyword">return</span>
+0320    <span class="keyword">end</span>
+0321    x=u(:,se(1)); 
+0322    l=l+1;
+0323 <span class="keyword">end</span>
+0324 
+0325 <a name="_sub5" href="#_subfunctions" class="code">function [A,P,Sz,XSz,XS,XS2]=DEFL(L,vtau,z,X,S,deflation)</a>
+0326 <span class="comment">%</span>
+0327 <span class="comment">% Latest revision 22.01.2018</span>
+0328 <span class="comment">%</span>
+0329 m=size(S,1);
+0330 P=[];
+0331 Sz=[];
+0332 XSz=[];
+0333 XS=[];
+0334 XS2=[];
+0335 A=<a href="#_sub6" class="code" title="subfunction [A]=formAz(L,vtau,z)">formAz</a>(L,vtau,z);
+0336 <span class="keyword">if</span>(m&gt;0&amp;&amp;deflation~=0)
+0337    P=A;
+0338    <span class="keyword">if</span>(deflation==-1)
+0339       A=[P,-X;X',zeros(m,m)]; 
+0340    <span class="keyword">else</span> 
+0341       Sz=z*eye(m)-S;
+0342       XSz=X/Sz;
+0343       <span class="keyword">if</span>(deflation==1)
+0344          LBC=[X',zeros(m)];
+0345       <span class="keyword">elseif</span>(deflation==2)  
+0346          XS=X*S;
+0347          LBC=[X'+z*XS',XS'*X];
+0348       <span class="keyword">elseif</span>(deflation==3)  
+0349          XS=X*S;
+0350          XS2=XS*S;
+0351          LBC=[X'+z*XS'+z^2*XS2',XS'*X+XS2'*XS+z*XS2'*X];    
+0352       <span class="keyword">end</span> 
+0353       A=[P,P*XSz;LBC];
+0354    <span class="keyword">end</span>   
+0355 <span class="keyword">end</span>
+0356 
+0357 <a name="_sub6" href="#_subfunctions" class="code">function [A]=formAz(L,vtau,z)</a>
+0358 <span class="comment">%</span>
+0359 <span class="comment">% Latest revision 23.04.2019</span>
+0360 <span class="comment">%</span>
+0361 A=L{1,1};
+0362 N = size(A,1); 
+0363 <span class="keyword">for</span> i=2:size(L,2)
+0364     A=A+L{1,i}*exp(-vtau(i-1)*z);
+0365 <span class="keyword">end</span>
+0366 A=A-eye(N)*z; 
+0367 
+0368 <a name="_sub7" href="#_subfunctions" class="code">function [v]=dAdz(L,vtau,z,x)</a>
+0369 <span class="comment">%</span>
+0370 <span class="comment">% Latest revision 10.03.2019</span>
+0371 <span class="comment">%</span>
+0372 v=-L{1,2}*(vtau(1)*exp(-vtau(1)*z)*x);
+0373 <span class="keyword">for</span> i=3:size(L,2)
+0374     v=v-L{1,i}*(vtau(i-1)*exp(-vtau(i-1)*z)*x);
+0375 <span class="keyword">end</span>
+0376 v=v-x; 
+0377 
+0378 <a name="_sub8" href="#_subfunctions" class="code">function [B]=formdAdz(L,vtau,z)</a>
+0379 <span class="comment">%</span>
+0380 <span class="comment">% Latest revision 10.03.2019</span>
+0381 <span class="comment">%</span>
+0382 n=size(L{1,1},1);
+0383 B=-L{1,2}*(vtau(1)*exp(-vtau(1)*z));
+0384 <span class="keyword">for</span> i=3:size(L,2)
+0385     B=B-L{1,i}*(vtau(i-1)*exp(-vtau(i-1)*z));
+0386 <span class="keyword">end</span>
+0387 B=B-eye(n); 
+0388  
+0389 <span class="comment">% function [resAXS]=resnorm(MATR,X,S)</span>
+0390 <span class="comment">% %</span>
+0391 <span class="comment">% % Latest revision 22.01.2018</span>
+0392 <span class="comment">% %</span>
+0393 <span class="comment">% if(size(S,1)&gt;0)</span>
+0394 <span class="comment">%    % MATR=[L_0(:),L_tau(:),L_tau_A(:),tau,tau_A];</span>
+0395 <span class="comment">%    L_0=MATR(:,1:4);</span>
+0396 <span class="comment">%    L_tau=MATR(:,5:8);</span>
+0397 <span class="comment">%    L_tau_A=MATR(:,9:12);</span>
+0398 <span class="comment">%    tau=MATR(1,13);</span>
+0399 <span class="comment">%    tau_A=MATR(2,13);</span>
+0400 <span class="comment">%    resAXS=norm(L_0*X+L_tau*(X*expm(-tau*S))...</span>
+0401 <span class="comment">%                          +L_tau_A*(X*expm(-tau_A*S))-X*S,2);</span>
+0402 <span class="comment">% else</span>
+0403 <span class="comment">%    resAXS=0.0;</span>
+0404 <span class="comment">% end</span></pre></div>
+<hr><address>Generated on Tue 21-Sep-2021 01:27:30 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
