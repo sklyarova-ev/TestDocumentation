@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of lower_bound1</title>
+  <meta name="keywords" content="lower_bound1">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">DIDAN</a> &gt; <a href="index.html">Functions</a> &gt; lower_bound1.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for DIDAN\Functions&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>lower_bound1
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function lb=lower_bound1(x, coef) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Latest revision 15.04.2019 
+
+ Вычисление функции, определяющей нижнюю границу области, в которой
+ находятся нули функции (см. FSS_1D)
+
+ Входные данные: x - перменная
+
+ Выходные данные: lb - значение функции при заданном значении переменной
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function lb=lower_bound1(x, coef)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Latest revision 15.04.2019</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Вычисление функции, определяющей нижнюю границу области, в которой</span>
+0006 <span class="comment">% находятся нули функции (см. FSS_1D)</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% Входные данные: x - перменная</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Выходные данные: lb - значение функции при заданном значении переменной</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0013 <span class="comment">%</span>
+0014 M_0=coef(1);
+0015 H_E_0=coef(2);
+0016 H_B_0=coef(3);
+0017 E_0=coef(4);
+0018 B_0=coef(5);
+0019 P_0=coef(6);
+0020 F_0=coef(7);
+0021 C_0=coef(8);
+0022 alpha_M=coef(9);
+0023 alpha_H_E=coef(10);
+0024 alpha_H_B=coef(11);
+0025 alpha_E=coef(12);
+0026 alpha_B=coef(13);
+0027 alpha_P=coef(14);
+0028 alpha_F=coef(15);
+0029 V_f_0=coef(16);
+0030 rho_H_E=coef(22);
+0031 rho_H_B=coef(23);
+0032 rho_E=coef(24);
+0033 rho_B=coef(25);
+0034 rho_P=coef(26);
+0035 rho_F=coef(27);
+0036 b_H_E=coef(28);
+0037 b_H_B=coef(29);
+0038 b_p_E=coef(30);
+0039 b_p_B=coef(31);
+0040 b_p_P=coef(32);
+0041 gamma_MV=coef(33);
+0042 gamma_FV=coef(34);
+0043 sigma=coef(35);
+0044 b_CE=coef(36);
+0045 b_m=coef(37);
+0046 alpha_m=coef(38);
+0047 nu=coef(39);
+0048 n=coef(40);
+0049 gamma_VC=coef(41);
+0050 gamma_VM=coef(42);
+0051 gamma_VF=coef(43);
+0052 b_p_H_E=coef(44);
+0053 b_p_H_B=coef(45);
+0054 b_EC=coef(46);
+0055 
+0056 V_f = x; 
+0057 R = (sigma*V_f)/(alpha_m + sigma*V_f);
+0058 
+0059 lb=((P_0*rho_F*gamma_VF*V_f)/(gamma_FV*V_f+alpha_F) + gamma_VM*V_f - <span class="keyword">...</span>
+0060     n*alpha_m *R*C_0 + gamma_VC*V_f*C_0*(1-R))/(nu - n*(alpha_m*R + b_m)<span class="keyword">...</span>
+0061     + gamma_VC*V_f*(1-R));</pre></div>
+<hr><address>Generated on Tue 21-Sep-2021 01:27:30 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

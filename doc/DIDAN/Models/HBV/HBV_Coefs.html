@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of HBV_Coefs</title>
+  <meta name="keywords" content="HBV_Coefs">
+  <meta name="description" content="Задание параметров модели HBV и вектора задержек">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../../index.html">Home</a> &gt;  <a href="../../index.html">DIDAN</a> &gt; <a href="#">Models</a> &gt; <a href="index.html">HBV</a> &gt; HBV_Coefs.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../../index.html"><img alt="<" border="0" src="../../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for DIDAN\Models\HBV&nbsp;<img alt=">" border="0" src="../../../right.png"></a></td></tr></table>-->
+
+<h1>HBV_Coefs
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+<div class="box"><strong>Задание параметров модели HBV и вектора задержек</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+<div class="box"><strong>function [coef,delays]=HBV_Coefs </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">Задание параметров модели HBV и вектора задержек
+ 
+ Выходные данные: coef - параметры модели,
+                 vtau - вектор задержек.
+                 varname - название переменных модели
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+Latest revision 17.09.2021</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [coef,delays]=HBV_Coefs</a>
+0002 <span class="comment">%Задание параметров модели HBV и вектора задержек</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Выходные данные: coef - параметры модели,</span>
+0005 <span class="comment">%                 vtau - вектор задержек.</span>
+0006 <span class="comment">%                 varname - название переменных модели</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%Latest revision 17.09.2021</span>
+0013 
+0014 <span class="comment">%число Авогадро, разделенное на 10e3</span>
+0015 N_A = 6.02e20; 
+0016 
+0017 <span class="comment">%parameters</span>
+0018    coef.M_0=1.0e-15*N_A;          <span class="comment">%1</span>
+0019    coef.H_E_0=1.0e-18*N_A;        <span class="comment">%2</span>
+0020    coef.H_B_0=1.0e-19*N_A;        <span class="comment">%3</span>
+0021    coef.E_0=1.0e-18*N_A;          <span class="comment">%4</span>
+0022    coef.B_0=1.0e-18*N_A;          <span class="comment">%5</span>
+0023    coef.P_0=4.3e-22*N_A;          <span class="comment">%6</span>
+0024    coef.F_0=8.3e-14*N_A;          <span class="comment">%7</span>
+0025    coef.C_0=0.5e-12*N_A;          <span class="comment">%8</span>
+0026    coef.alpha_M=1.2;              <span class="comment">%9</span>
+0027    coef.alpha_H_E=1.0;            <span class="comment">%10</span>
+0028    coef.alpha_H_B=1.0;            <span class="comment">%11</span>
+0029    coef.alpha_E=0.4;              <span class="comment">%12</span>
+0030    coef.alpha_B=0.1;              <span class="comment">%13</span>
+0031    coef.alpha_P=0.4;              <span class="comment">%14</span>
+0032    coef.alpha_F=0.043;            <span class="comment">%15</span>
+0033    coef.V_f_0=2.9e-16*N_A;        <span class="comment">%16</span>
+0034    coef.rho_H_E=2.0;              <span class="comment">%17</span>
+0035    coef.rho_H_B=2.0;              <span class="comment">%18</span>
+0036    coef.rho_E=16.0;               <span class="comment">%19</span>
+0037    coef.rho_B=16.0;               <span class="comment">%20</span>
+0038    coef.rho_P=3.0;                <span class="comment">%21</span>
+0039    coef.rho_F=1.7e8;              <span class="comment">%22</span>
+0040    coef.b_H_E=2.7e16/N_A;         <span class="comment">%23</span>
+0041    coef.b_H_B=2.7e16/N_A;         <span class="comment">%24</span>
+0042    coef.b_p_E=5.3e33/(N_A)^2;     <span class="comment">%25</span>
+0043    coef.b_p_B=8.0e32/(N_A)^2;     <span class="comment">%26</span>
+0044    coef.b_p_P=1.7e30/(N_A)^2;     <span class="comment">%27</span>
+0045    coef.gamma_MV=9.4e9/N_A;       <span class="comment">%28</span>
+0046    coef.gamma_FV=8.6e11/N_A;      <span class="comment">%29</span>
+0047    coef.sigma=2.3e9/N_A;          <span class="comment">%30</span>
+0048    coef.b_CE=6.6e14/N_A;          <span class="comment">%31</span>
+0049    coef.b_m=0.052;                <span class="comment">%32</span>
+0050    coef.alpha_m=0.15;             <span class="comment">%33</span>
+0051    coef.nu=83.0;                  <span class="comment">%34</span>
+0052    coef.n=5.0;                    <span class="comment">%35</span>
+0053    coef.gamma_VC=2.5e7/N_A;       <span class="comment">%36</span>
+0054    coef.gamma_VM=0.4;             <span class="comment">%37</span>
+0055    coef.gamma_VF=3.0e11/N_A;      <span class="comment">%38</span>
+0056    coef.b_p_H_E=5.3e27/(N_A)^2;   <span class="comment">%39</span>
+0057    coef.b_p_H_B=8.0e28/(N_A)^2;   <span class="comment">%40</span>
+0058    coef.b_EC=1.6e14/N_A;          <span class="comment">%41</span>
+0059 <span class="comment">%delays</span>
+0060    tau_H_E=0.6;             <span class="comment">%1</span>
+0061    tau_H_B=0.6;             <span class="comment">%2</span>
+0062    tau_E=2.0;               <span class="comment">%3</span>
+0063    tau_B=2.0;               <span class="comment">%4</span>
+0064    tau_P=3.0;               <span class="comment">%5</span>
+0065 
+0066 delays = [tau_H_E; tau_H_B; tau_E; tau_B; tau_P];
+0067 delays = sort(delays);</pre></div>
+<hr><address>Generated on Tue 21-Sep-2021 01:27:30 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

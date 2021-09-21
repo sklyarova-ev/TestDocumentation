@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of HBV_RHS</title>
+  <meta name="keywords" content="HBV_RHS">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../../index.html">Home</a> &gt;  <a href="../../index.html">DIDAN</a> &gt; <a href="#">Models</a> &gt; <a href="index.html">HBV</a> &gt; HBV_RHS.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../../index.html"><img alt="<" border="0" src="../../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for DIDAN\Models\HBV&nbsp;<img alt=">" border="0" src="../../../right.png"></a></td></tr></table>-->
+
+<h1>HBV_RHS
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+<div class="box"><strong>function [U,F]=HBV_RHS(coef) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Latest revision 23.04.2021 
+
+ Задание правой части модели HBV
+
+ Входные данные: coef - параметры модели, 
+
+ Выходные данные: U - переменные модели,
+                  F - правая часть модели.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ Создаем символические переменные</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../../../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [U,F]=HBV_RHS(coef)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Latest revision 23.04.2021</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Задание правой части модели HBV</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Входные данные: coef - параметры модели,</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Выходные данные: U - переменные модели,</span>
+0010 <span class="comment">%                  F - правая часть модели.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0013 <span class="comment">% Создаем символические переменные</span>
+0014 syms V_f C_V m M_V H_E E_ H_B B P F_
+0015 syms V_f_tau_H_E C_V_tau_H_E m_tau_H_E M_V_tau_H_E H_E_tau_H_E E_tau_H_E 
+0016 syms H_B_tau_H_E B_tau_H_E P_tau_H_E F_tau_H_E    
+0017 syms V_f_tau_H_B C_V_tau_H_B m_tau_H_B M_V_tau_H_B H_E_tau_H_B E_tau_H_B 
+0018 syms H_B_tau_H_B B_tau_H_B P_tau_H_B F_tau_H_B
+0019 syms V_f_tau_H_B C_V_tau_H_B m_tau_H_B M_V_tau_H_B H_E_tau_H_B E_tau_H_B
+0020 syms H_B_tau_H_B B_tau_H_B P_tau_H_B F_tau_H_B
+0021 syms V_f_tau_E C_V_tau_E m_tau_E M_V_tau_E H_E_tau_E E_tau_E H_B_tau_E 
+0022 syms B_tau_E P_tau_E F_tau_E
+0023 syms V_f_tau_B C_V_tau_B m_tau_B M_V_tau_B H_E_tau_B E_tau_B H_B_tau_B 
+0024 syms B_tau_B P_tau_B F_tau_B
+0025 syms V_f_tau_P C_V_tau_P m_tau_P M_V_tau_P H_E_tau_P E_tau_P H_B_tau_P 
+0026 syms B_tau_P P_tau_P F_tau_P
+0027 
+0028 
+0029 <span class="comment">% 6 так как 6 времен задержек</span>
+0030 U=cell(1,6);
+0031 U{1,1}=[V_f;C_V;m;M_V;H_E;E_;H_B;B;P;F_];
+0032 U{1,2}=[V_f_tau_H_E;C_V_tau_H_E;m_tau_H_E;M_V_tau_H_E;H_E_tau_H_E;E_tau_H_E;<span class="keyword">...</span>
+0033     H_B_tau_H_E;B_tau_H_E;P_tau_H_E;F_tau_H_E];
+0034 U{1,3}=[V_f_tau_H_B;C_V_tau_H_B;m_tau_H_B;M_V_tau_H_B;H_E_tau_H_B;E_tau_H_B;<span class="keyword">...</span>
+0035     H_B_tau_H_B;B_tau_H_B;P_tau_H_B;F_tau_H_B];
+0036 U{1,4}=[V_f_tau_E;C_V_tau_E;m_tau_E;M_V_tau_E;H_E_tau_E;E_tau_E;<span class="keyword">...</span>
+0037     H_B_tau_E;B_tau_E;P_tau_E;F_tau_E];
+0038 U{1,5}=[V_f_tau_B;C_V_tau_B;m_tau_B;M_V_tau_B;H_E_tau_B;E_tau_B;H_B_tau_B;<span class="keyword">...</span>
+0039     B_tau_B;P_tau_B;F_tau_B];
+0040 U{1,6}=[V_f_tau_P;C_V_tau_P;m_tau_P;M_V_tau_P;H_E_tau_P;E_tau_P;H_B_tau_P;<span class="keyword">...</span>
+0041     B_tau_P;P_tau_P;F_tau_P];
+0042 <span class="comment">%</span>
+0043 xi = 1 - m / coef.C_0; 
+0044 F(1)=(coef.nu*C_V +coef.n*coef.b_CE*C_V*E_)-coef.gamma_VC*V_f*(coef.C_0-C_V-m)-<span class="keyword">...</span>
+0045     coef.gamma_VF*V_f*F_-coef.gamma_VM*V_f;
+0046 F(2)=coef.sigma*V_f*(coef.C_0-C_V-m)-coef.b_CE*C_V*E_-coef.b_m*C_V;
+0047 F(3)=coef.b_CE*C_V*E_+coef.b_m*C_V-coef.alpha_m*m; 
+0048 F(4)=coef.gamma_MV*coef.M_0*V_f-coef.alpha_M*M_V; 
+0049 F(5)= (coef.b_H_E*(xi*coef.rho_H_E*M_V_tau_H_E*H_E_tau_H_E-M_V*H_E)-<span class="keyword">...</span>
+0050     coef.b_p_H_E*M_V*H_E*E_)+coef.alpha_H_E*(coef.H_E_0-H_E);
+0051 F(6)=coef.b_p_E*(xi*coef.rho_E*M_V_tau_E*H_E_tau_E*E_tau_E-M_V*H_E*E_)-<span class="keyword">...</span>
+0052     coef.b_EC*C_V*E_+coef.alpha_E*(coef.E_0-E_);
+0053 F(7)=(coef.b_H_B*(xi*coef.rho_H_B*M_V_tau_H_B*H_B_tau_H_B-M_V*H_B)-<span class="keyword">...</span>
+0054     coef.b_p_H_B*M_V*H_B*B)+coef.alpha_H_B*(coef.H_B_0-H_B);
+0055 F(8)=coef.b_p_B*(xi*coef.rho_B*M_V_tau_B*H_B_tau_B*B_tau_B-M_V*H_B*B)+<span class="keyword">...</span>
+0056     coef.alpha_B*(coef.B_0-B);
+0057 F(9)=coef.b_p_P* xi*coef.rho_P*M_V_tau_P*H_B_tau_P*B_tau_P +<span class="keyword">...</span>
+0058     coef.alpha_P*(coef.P_0-P);
+0059 F(10)=coef.rho_F*P-coef.gamma_FV*F_*V_f-coef.alpha_F*F_;
+0060 
+0061</pre></div>
+<hr><address>Generated on Tue 21-Sep-2021 01:27:30 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
