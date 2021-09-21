@@ -1,0 +1,238 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of PSolStabilityAnalysis</title>
+  <meta name="keywords" content="PSolStabilityAnalysis">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">DIDAN</a> &gt; PSolStabilityAnalysis.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for DIDAN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>PSolStabilityAnalysis
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function eigP=PSolStabilityAnalysis(coef,vtau,RHS,varname,PSfile) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Latest revision 22.03.2021
+
+ Анализ устойчивости периодических решений
+
+ Внешние процедуры: matlabFunction_new
+ Папка с внешними процедурами:</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../DIDAN/Functions/matlabFunction_new.html" class="code" title="function matlabFunction_new(F,filename,vars)">matlabFunction_new</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function Matrices_of_t(coef,vtau,RHS)</a></li><li><a href="#_sub2" class="code">function CM=CompMatrices(delta,vtau,S,U,U1,U2,U3,U4,U5,U6,U7,U8,U9,U10)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function eigP=PSolStabilityAnalysis(coef,vtau,RHS,varname,PSfile)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Latest revision 22.03.2021</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Анализ устойчивости периодических решений</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Внешние процедуры: matlabFunction_new</span>
+0008 <span class="comment">% Папка с внешними процедурами:</span>
+0009 [filepath,~,~] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0010 addpath(genpath(filepath)); 
+0011 <span class="comment">%</span>
+0012 <span class="comment">% Внутренние процедуры: CompMatrices, Matrices_of_t</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0015 <span class="comment">% УСТАНОВКА ПАРАМЕТРОВ:</span>
+0016 <span class="comment">%</span>
+0017 delta=1e-2;
+0018 interp1_method=<span class="string">'spline'</span>; <span class="comment">% метод интерполяции: 'linear', 'spline', 'pchip'</span>
+0019 m=10; 
+0020 p=4; <span class="comment">% необходимое количество собственных значений</span>
+0021 tol=1e-12; <span class="comment">% значение спектральной невязки</span>
+0022 nsmax=10; <span class="comment">% максимальное число итераций метода Стюарта</span>
+0023 idisp=0; <span class="comment">% выводить ли спектральную невязку (1) или нет (0)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0026 <span class="comment">% ИНИЦИАЛИЗАЦИЯ:</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Считывание периодических решений и значений параметров модели:</span>
+0029  load(PSfile,<span class="string">'Tp'</span>,<span class="string">'UN'</span>,<span class="string">'tN'</span>);
+0030 
+0031 <span class="comment">%</span>
+0032 K=ceil(Tp/delta);
+0033 vtau = sort(vtau); 
+0034 vm=ceil(vtau/delta);
+0035 mp=vm(end);
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Интерполяция периодического решения</span>
+0038 <span class="comment">%</span>
+0039 tadd=((1-mp):1:K+1)*delta;
+0040 UTN=interp1(tN,UN',tadd,interp1_method)';
+0041 <span class="comment">%</span>
+0042 <span class="comment">% Вычисление матриц линеаризованной около периодического решения от системы</span>
+0043 <span class="comment">%</span>
+0044 <a href="#_sub1" class="code" title="subfunction Matrices_of_t(coef,vtau,RHS)">Matrices_of_t</a>(coef,vtau, RHS);
+0045 S=cell(1,(size(vtau,1)+1));
+0046 <span class="keyword">for</span> l=1:(size(vtau,1)+1)
+0047     S{1,l}=[<span class="string">'jac'</span>,num2str(l)];
+0048 <span class="keyword">end</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0051 <span class="comment">% ВЫЧИСЛЕНИЕ СОБСТВЕННЫХ ЗНАЧЕНИЙ МАТРИЦЫ МОНОДРОМИИ МЕТОДОМ СТЮАРТА</span>
+0052 <span class="comment">%</span>
+0053 tic
+0054 nov=size(varname,2);
+0055 vm1=zeros(10,1);
+0056 vm1(1:size(vm,1))=vm;
+0057 count=0;
+0058 ns=1;
+0059 <span class="keyword">while</span> count==0
+0060   <span class="keyword">if</span> ns==1
+0061         Q=rand([nov*mp,m]);
+0062         Q=orth(Q);
+0063         X=zeros(size(Q));
+0064         <span class="keyword">for</span> i=1:size(Q,2)
+0065             qnew=reshape(Q(:,i),nov,mp);
+0066             Uadd=zeros(nov,mp+K);
+0067             Uadd(:,1:mp)=qnew;    
+0068             <span class="keyword">for</span> k=mp+1:mp+K
+0069                 CM=<a href="#_sub2" class="code" title="subfunction CM=CompMatrices(delta,vtau,S,U,U1,U2,U3,U4,U5,U6,U7,U8,U9,U10)">CompMatrices</a>(delta,vtau,S,UTN(:,k+1),UTN(:,k+1-vm1(1)),<span class="keyword">...</span>
+0070                                     UTN(:,k+1-vm1(2)),UTN(:,k+1-vm1(3)),<span class="keyword">...</span>
+0071                                     UTN(:,k+1-vm1(4)),UTN(:,k+1-vm1(5)),<span class="keyword">...</span>
+0072                                     UTN(:,k+1-vm1(6)),UTN(:,k+1-vm1(7)),<span class="keyword">...</span>
+0073                                     UTN(:,k+1-vm1(8)),UTN(:,k+1-vm1(9)),<span class="keyword">...</span>
+0074                                     UTN(:,k+1-vm1(10)));
+0075                 Uadd(:,k)=CM{1,1}*Uadd(:,k-1)+CM{1,2}*Uadd(:,k-2);
+0076                 <span class="keyword">for</span> j=3:size(CM,2)
+0077                     Uadd(:,k)=Uadd(:,k)+CM{1,j}*Uadd(:,k-vm(j-2));
+0078                 <span class="keyword">end</span>  
+0079             <span class="keyword">end</span> 
+0080             X(:,i)=reshape(Uadd(:,K+1:mp+K),nov*mp,1);
+0081         <span class="keyword">end</span>
+0082   <span class="keyword">end</span>
+0083     [Q,~]=qr(X,0);  
+0084     <span class="keyword">for</span> i=1:size(Q,2)
+0085         qnew=reshape(Q(:,i),nov,mp);
+0086         Uadd=zeros(nov,mp+K);
+0087         Uadd(:,1:mp)=qnew;    
+0088         <span class="keyword">for</span> k=mp+1:mp+K
+0089             CM=<a href="#_sub2" class="code" title="subfunction CM=CompMatrices(delta,vtau,S,U,U1,U2,U3,U4,U5,U6,U7,U8,U9,U10)">CompMatrices</a>(delta,vtau,S,UTN(:,k+1),UTN(:,k+1-vm1(1)),<span class="keyword">...</span>
+0090                                     UTN(:,k+1-vm1(2)),UTN(:,k+1-vm1(3)),<span class="keyword">...</span>
+0091                                     UTN(:,k+1-vm1(4)),UTN(:,k+1-vm1(5)),<span class="keyword">...</span>
+0092                                     UTN(:,k+1-vm1(6)),UTN(:,k+1-vm1(7)),<span class="keyword">...</span>
+0093                                     UTN(:,k+1-vm1(8)),UTN(:,k+1-vm1(9)),<span class="keyword">...</span>
+0094                                     UTN(:,k+1-vm1(10)));
+0095             Uadd(:,k)=CM{1,1}*Uadd(:,k-1)+CM{1,2}*Uadd(:,k-2);
+0096             <span class="keyword">for</span> j=3:size(CM,2)
+0097                 Uadd(:,k)=Uadd(:,k)+CM{1,j}*Uadd(:,k-vm(j-2));
+0098             <span class="keyword">end</span>  
+0099         <span class="keyword">end</span> 
+0100         X(:,i)=reshape(Uadd(:,K+1:mp+K),nov*mp,1);
+0101     <span class="keyword">end</span>
+0102     [U,T]=schur(Q'*X,<span class="string">'real'</span>);
+0103     E=ordeig(T);
+0104     Ei=abs(E);
+0105     [Es,Ind]=sort(Ei,<span class="string">'descend'</span>);
+0106     <span class="keyword">if</span> Es(p)==Es(p+1)
+0107         p=p-1;
+0108         disp(<span class="string">'p уменьшено на 1'</span>);
+0109     <span class="keyword">end</span>
+0110     Indnew=zeros(size(Ind));
+0111     <span class="keyword">for</span> k=1:size(Ind,1)
+0112         <span class="keyword">if</span> Ind(k)&lt;=p
+0113             Indnew(k)=1;
+0114         <span class="keyword">else</span>
+0115             Indnew(k)=0;
+0116         <span class="keyword">end</span>
+0117     <span class="keyword">end</span>
+0118     Indnewl=logical(Indnew);
+0119     [US,~]=ordschur(U,T,Indnewl);
+0120     Ucheck=US(:,1:p);
+0121     Q=Q*Ucheck;
+0122     Xcheck=X*Ucheck;
+0123     <span class="keyword">if</span> (idisp)
+0124         fprintf(1,<span class="string">'Спектральная невязка после %d-ой итерации %6.15g \n'</span>,ns,norm((Xcheck-Q*(Q'*Xcheck)),2));
+0125     <span class="keyword">end</span>
+0126     ns=ns+1;
+0127     <span class="keyword">if</span> (norm((Xcheck-Q*(Q'*Xcheck)),2)&lt;tol || ns==nsmax)
+0128         count=count+1;
+0129     <span class="keyword">else</span>  
+0130         X=X*US;
+0131         <span class="keyword">if</span> imag(E(Ind(1)))~=0
+0132             m=m-1;
+0133             ns=1;
+0134             disp(<span class="string">'m уменьшено на 1'</span>);
+0135         <span class="keyword">end</span>
+0136     <span class="keyword">end</span>
+0137 <span class="keyword">end</span>
+0138 toc
+0139 <span class="comment">%</span>
+0140 <span class="comment">% Вывод p наибольших по модулю собсбственных значений</span>
+0141 <span class="comment">%</span>
+0142 Ei=abs(E);
+0143 [~,Ind]=sort(Ei,<span class="string">'descend'</span>);
+0144 Enew=E(Ind);
+0145 eigP=zeros(1,p);
+0146 <span class="keyword">for</span> i=1:p
+0147     disp(Enew(i));
+0148     eigP(i)=Enew(i);
+0149 <span class="keyword">end</span>
+0150 
+0151 
+0152 delete jac*.m
+0153 
+0154 <a name="_sub1" href="#_subfunctions" class="code">function Matrices_of_t(coef,vtau,RHS)</a>
+0155 
+0156 L=cell(1,(size(vtau,1)+1));
+0157 [U,Func]=RHS(coef);
+0158 <span class="keyword">for</span> i=1:size(U,2)
+0159    L{1,i}=jacobian(Func,U{1,i});
+0160    s=[<span class="string">'jac'</span>,num2str(i),<span class="string">'.m'</span>];
+0161    <a href="../DIDAN/Functions/matlabFunction_new.html" class="code" title="function matlabFunction_new(F,filename,vars)">matlabFunction_new</a>(L{1,i},s,U)
+0162 <span class="keyword">end</span>
+0163 
+0164 <a name="_sub2" href="#_subfunctions" class="code">function CM=CompMatrices(delta,vtau,S,U,U1,U2,U3,U4,U5,U6,U7,U8,U9,U10)</a>
+0165 CM=cell(1,(size(vtau,1)+2));
+0166 LN=cell(1,(size(vtau,1)+1));
+0167 
+0168 <span class="keyword">for</span> k=1:(size(vtau,1)+1)
+0169     LN{1,k}=feval(S{1,k},U,U1,U2,U3,U4,U5,U6,U7,U8,U9,U10);
+0170 <span class="keyword">end</span>
+0171 
+0172 I=eye(size(U,1));
+0173 C=(1.5*I-delta*LN{1,1})\I;
+0174 C1=2*C;
+0175 C2=-0.5*C;
+0176 
+0177 CM{1,1}=C1;
+0178 CM{1,2}=C2;
+0179 
+0180 <span class="keyword">for</span> i=2:(size(vtau,1)+1)
+0181     Ci=C*(delta*LN{1,i});
+0182     CM{1,i+1}=Ci;
+0183 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 21-Sep-2021 01:27:30 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

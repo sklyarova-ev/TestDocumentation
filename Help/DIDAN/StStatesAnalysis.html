@@ -1,0 +1,401 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of StStatesAnalysis</title>
+  <meta name="keywords" content="StStatesAnalysis">
+  <meta name="description" content="StStatesAnalysis  Analyzes steady states of a viral infection model with delayed immune response">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">DIDAN</a> &gt; StStatesAnalysis.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for DIDAN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>StStatesAnalysis
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>StStatesAnalysis  Analyzes steady states of a viral infection model with delayed immune response</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [SS,Resid,EiVals,EiVects]=StStatesAnalysis(coef, delays, RHS, SSFinder, resFile) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> StStatesAnalysis  Analyzes steady states of a viral infection model with delayed immune response
+ 
+ [SS,RESID,EIVALS,EIVECTS] = StStatesAnalysis(COEF, DELAYS, RHS, SSFINDER,
+ RESFILE) computes all steady states of a viral infection model formulated
+ as a system of nonlinear delay differential equations and analyzes their
+ stability.
+
+ Steady states of such differential system for fixed values of parameters
+ are nonnegative solutions to the system F(X) = 0. 
+
+
+ EXTERNAL FUNCTIONS: EigProbSol
+
+ INTERNAL FUNCTIONS: -
+
+ INPUTS: 
+   COEF:       struct with K fields where K is the total number of the
+               given model parameters. The field names are the model
+               parameter names, and the values in the fields are the
+               corresponding model parameter values for which the steady
+               states are to be computed and analyzed.
+               For example, for the model with three parameters a = 1, b =
+               2, c = 3, COEF is the struct with three fields:
+                      a: 1
+                      b: 2
+                      c: 3
+               Also, see examples of creating such struct in: HBV_Coef,
+               LCMV_Coef.
+
+      
+   DELAYS:    Mx1 column vector of delays where M is the total number of
+              the model delays. 
+              NOTE: The delays in the vector must be sorted in increasing
+              order.
+              For example, for the model with four delays: t1 = 1, t2 = 2,
+              t3 = 4, t4 = 2, the vector DELAYS is [1; 2; 2; 4].
+              
+              Also, see examples of creating such coulumn vector in:
+              HBV_Coef, LCMV_Coef.
+
+
+   RHS:       callback funcion [U,F]=RHS(COEF) where:
+                  - COEF is the same struct as the first argument of
+                    StStatesAnalysis (see COEF's  description above).
+
+                  - U is the 1x(M+1) cell array where M is the total
+                    number of the model delays.
+                    For i = 1:M+1, U{1,i} is the Nx1 column vector of
+                    symbolic variables where N is the total numer of the
+                    model variables.
+                    U{1,1} contains the designations of all the model
+                    variables in the same order that the model right-hand
+                    sides describing variable temporal variations are
+                    given in F (see F's description below).
+                    For i = 2:M+1, U{1,i} contains the designations of all
+                    the model variables for the (i - 1)-th delay from the
+                    vector DELAYS which is the second argument of
+                    StStatesAnalysis (See DELAYS' description above).
+        
+                    For example, the model has three variables A, B, C and
+                    two delays - t1 and t2, t2 &lt; t1. In this case, the
+                    vector DELAYS is [t2; t1], since t2 &lt; t1 and the
+                    delays must be sorted in increasing order. So, U may be
+                    created as follows:
+                    ==================CODE-EXAMPLE=========================
+                    |1    syms A B C A_t1, B_t1 C_t1, A_t2, B_t2 C_t2 
+                    |2    U{1,1} = [A;    B;    C   ];
+                    |3    U{1,2} = [A_t2; B_t2; C_t2];
+                    |4    U{1,3} = [A_t1; B_t1; C_t1];
+                    =======================================================
+                    NOTE 1: The order of the variable designations is the
+                    same for any cell in the cell array U (see the code
+                    example above).
+                    NOTE 2: For i = 2:M+1, U{1,i} must contain the
+                    variable designations for the i-th delay in the DELAYS
+                    array (see the code example above).
+                    
+                  - F is the 1xN row vector where N is the total number
+                    of the model variables. The vector elements are the
+                    right-hand sides of the model's delay differential
+                    equations given as symbolic functions that use the
+                    parameter values and the symbolic variables
+                    contained in the struct COEF and in the cell array U
+                    respectively.
+                    NOTE: The right-hand sides must go in the same order
+                    that the variables whose temporal variations they
+                    describe are given in any cell of the cell array
+                    U.(see U's description above). Thus, for U shown in
+                    the code example above, F(1) must describe A's
+                    variation, F(2) - B's variation, and F(3) - C's
+                    variationa.
+                    Also, see examples of creating F in: HBV_RHS,
+                    LCMV_Coef.
+          
+
+  SSFINDER:   autogenerated callback function IG = SSFINDER(COEF) where: 
+                  - COEF is the same struct as the first argument of
+                    StStatesAnalysis (see COEF's  description
+                    above).
+                  - IG is the NxS matrix where N is the total number
+                    of the model variables, and S is the number of the
+                    solutions to the system F(X) = 0 found by SSFINDER,
+                    where X is the vector of the model variables which
+                    doesn't depend on time and F(X) is the initial system
+                    right-hand side. For each i = 1:S, the column vector
+                    IG(:, i) is one of the found solutions. For the
+                    correctly generated SSFINDER, the index number of a
+                    certain variable in each found solution corresponds to
+                    the index number of the right-hand side describing
+                    this variabe temporal variation in the row vector with
+                    right-hand sides returned by RHS (see RHS's
+                    description above).
+                               
+
+  RESFILE:    output file to save the matrices: SS, EIVALS, and EIVECTS
+              that StStatesAnalysis returns (See description below) 
+
+ OUTPUTS:      
+  SS:         NxS matrix where N is the total number
+              of the model variables, and S is the number of the found
+              steady states. The steady states are found as For each i =
+              1:S, SS(i, :) is one of the found steady states.
+ 
+  RESID:      scalar value. 2-matrix-norm residual for the SS.
+
+  EIVALS: 
+    
+  EIVECTS:              
+
+                       
+ AUTHORS: M. Yu. Khristichenko, Yu. M. Nechepurenko, E. V. Sklyarova
+ VERSION: 21.09.2021</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../DIDAN/Functions/EigProbSol.html" class="code" title="function [Ei,Xi,resEi]=EigProbSol(RHS,Uss,coef,vtau,aoev,Esolver,deflation,addinf2,ind,ifig)">EigProbSol</a>	</li><li><a href="../DIDAN/Functions/Residual.html" class="code" title="function [res]=Residual(S,coef,RHS)">Residual</a>	</li><li><a href="../DIDAN/Functions/matlabFunction_new.html" class="code" title="function matlabFunction_new(F,filename,vars)">matlabFunction_new</a>	</li><li><a href="rhsm.html" class="code" title="function F=rhsm(in1,in2,in3,in4,in5,in6,varargin)">rhsm</a>	RHSM%F=RHSM(IN1,IN2,IN3,IN4,IN5,IN6)%ThisfunctionwasgeneratedbytheSymbolicMathToolboxversion8.7.%20-Sep-202123:32:20</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [SS,Resid,EiVals,EiVects]=StStatesAnalysis(coef, delays, RHS, SSFinder, resFile)</a>
+0002 <span class="comment">% StStatesAnalysis  Analyzes steady states of a viral infection model with delayed immune response</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% [SS,RESID,EIVALS,EIVECTS] = StStatesAnalysis(COEF, DELAYS, RHS, SSFINDER,</span>
+0005 <span class="comment">% RESFILE) computes all steady states of a viral infection model formulated</span>
+0006 <span class="comment">% as a system of nonlinear delay differential equations and analyzes their</span>
+0007 <span class="comment">% stability.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Steady states of such differential system for fixed values of parameters</span>
+0010 <span class="comment">% are nonnegative solutions to the system F(X) = 0.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% EXTERNAL FUNCTIONS: EigProbSol</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% INTERNAL FUNCTIONS: -</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% INPUTS:</span>
+0018 <span class="comment">%   COEF:       struct with K fields where K is the total number of the</span>
+0019 <span class="comment">%               given model parameters. The field names are the model</span>
+0020 <span class="comment">%               parameter names, and the values in the fields are the</span>
+0021 <span class="comment">%               corresponding model parameter values for which the steady</span>
+0022 <span class="comment">%               states are to be computed and analyzed.</span>
+0023 <span class="comment">%               For example, for the model with three parameters a = 1, b =</span>
+0024 <span class="comment">%               2, c = 3, COEF is the struct with three fields:</span>
+0025 <span class="comment">%                      a: 1</span>
+0026 <span class="comment">%                      b: 2</span>
+0027 <span class="comment">%                      c: 3</span>
+0028 <span class="comment">%               Also, see examples of creating such struct in: HBV_Coef,</span>
+0029 <span class="comment">%               LCMV_Coef.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%   DELAYS:    Mx1 column vector of delays where M is the total number of</span>
+0033 <span class="comment">%              the model delays.</span>
+0034 <span class="comment">%              NOTE: The delays in the vector must be sorted in increasing</span>
+0035 <span class="comment">%              order.</span>
+0036 <span class="comment">%              For example, for the model with four delays: t1 = 1, t2 = 2,</span>
+0037 <span class="comment">%              t3 = 4, t4 = 2, the vector DELAYS is [1; 2; 2; 4].</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">%              Also, see examples of creating such coulumn vector in:</span>
+0040 <span class="comment">%              HBV_Coef, LCMV_Coef.</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%   RHS:       callback funcion [U,F]=RHS(COEF) where:</span>
+0044 <span class="comment">%                  - COEF is the same struct as the first argument of</span>
+0045 <span class="comment">%                    StStatesAnalysis (see COEF's  description above).</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">%                  - U is the 1x(M+1) cell array where M is the total</span>
+0048 <span class="comment">%                    number of the model delays.</span>
+0049 <span class="comment">%                    For i = 1:M+1, U{1,i} is the Nx1 column vector of</span>
+0050 <span class="comment">%                    symbolic variables where N is the total numer of the</span>
+0051 <span class="comment">%                    model variables.</span>
+0052 <span class="comment">%                    U{1,1} contains the designations of all the model</span>
+0053 <span class="comment">%                    variables in the same order that the model right-hand</span>
+0054 <span class="comment">%                    sides describing variable temporal variations are</span>
+0055 <span class="comment">%                    given in F (see F's description below).</span>
+0056 <span class="comment">%                    For i = 2:M+1, U{1,i} contains the designations of all</span>
+0057 <span class="comment">%                    the model variables for the (i - 1)-th delay from the</span>
+0058 <span class="comment">%                    vector DELAYS which is the second argument of</span>
+0059 <span class="comment">%                    StStatesAnalysis (See DELAYS' description above).</span>
+0060 <span class="comment">%</span>
+0061 <span class="comment">%                    For example, the model has three variables A, B, C and</span>
+0062 <span class="comment">%                    two delays - t1 and t2, t2 &lt; t1. In this case, the</span>
+0063 <span class="comment">%                    vector DELAYS is [t2; t1], since t2 &lt; t1 and the</span>
+0064 <span class="comment">%                    delays must be sorted in increasing order. So, U may be</span>
+0065 <span class="comment">%                    created as follows:</span>
+0066 <span class="comment">%                    ==================CODE-EXAMPLE=========================</span>
+0067 <span class="comment">%                    |1    syms A B C A_t1, B_t1 C_t1, A_t2, B_t2 C_t2</span>
+0068 <span class="comment">%                    |2    U{1,1} = [A;    B;    C   ];</span>
+0069 <span class="comment">%                    |3    U{1,2} = [A_t2; B_t2; C_t2];</span>
+0070 <span class="comment">%                    |4    U{1,3} = [A_t1; B_t1; C_t1];</span>
+0071 <span class="comment">%                    =======================================================</span>
+0072 <span class="comment">%                    NOTE 1: The order of the variable designations is the</span>
+0073 <span class="comment">%                    same for any cell in the cell array U (see the code</span>
+0074 <span class="comment">%                    example above).</span>
+0075 <span class="comment">%                    NOTE 2: For i = 2:M+1, U{1,i} must contain the</span>
+0076 <span class="comment">%                    variable designations for the i-th delay in the DELAYS</span>
+0077 <span class="comment">%                    array (see the code example above).</span>
+0078 <span class="comment">%</span>
+0079 <span class="comment">%                  - F is the 1xN row vector where N is the total number</span>
+0080 <span class="comment">%                    of the model variables. The vector elements are the</span>
+0081 <span class="comment">%                    right-hand sides of the model's delay differential</span>
+0082 <span class="comment">%                    equations given as symbolic functions that use the</span>
+0083 <span class="comment">%                    parameter values and the symbolic variables</span>
+0084 <span class="comment">%                    contained in the struct COEF and in the cell array U</span>
+0085 <span class="comment">%                    respectively.</span>
+0086 <span class="comment">%                    NOTE: The right-hand sides must go in the same order</span>
+0087 <span class="comment">%                    that the variables whose temporal variations they</span>
+0088 <span class="comment">%                    describe are given in any cell of the cell array</span>
+0089 <span class="comment">%                    U.(see U's description above). Thus, for U shown in</span>
+0090 <span class="comment">%                    the code example above, F(1) must describe A's</span>
+0091 <span class="comment">%                    variation, F(2) - B's variation, and F(3) - C's</span>
+0092 <span class="comment">%                    variationa.</span>
+0093 <span class="comment">%                    Also, see examples of creating F in: HBV_RHS,</span>
+0094 <span class="comment">%                    LCMV_Coef.</span>
+0095 <span class="comment">%</span>
+0096 <span class="comment">%</span>
+0097 <span class="comment">%  SSFINDER:   autogenerated callback function IG = SSFINDER(COEF) where:</span>
+0098 <span class="comment">%                  - COEF is the same struct as the first argument of</span>
+0099 <span class="comment">%                    StStatesAnalysis (see COEF's  description</span>
+0100 <span class="comment">%                    above).</span>
+0101 <span class="comment">%                  - IG is the NxS matrix where N is the total number</span>
+0102 <span class="comment">%                    of the model variables, and S is the number of the</span>
+0103 <span class="comment">%                    solutions to the system F(X) = 0 found by SSFINDER,</span>
+0104 <span class="comment">%                    where X is the vector of the model variables which</span>
+0105 <span class="comment">%                    doesn't depend on time and F(X) is the initial system</span>
+0106 <span class="comment">%                    right-hand side. For each i = 1:S, the column vector</span>
+0107 <span class="comment">%                    IG(:, i) is one of the found solutions. For the</span>
+0108 <span class="comment">%                    correctly generated SSFINDER, the index number of a</span>
+0109 <span class="comment">%                    certain variable in each found solution corresponds to</span>
+0110 <span class="comment">%                    the index number of the right-hand side describing</span>
+0111 <span class="comment">%                    this variabe temporal variation in the row vector with</span>
+0112 <span class="comment">%                    right-hand sides returned by RHS (see RHS's</span>
+0113 <span class="comment">%                    description above).</span>
+0114 <span class="comment">%</span>
+0115 <span class="comment">%</span>
+0116 <span class="comment">%  RESFILE:    output file to save the matrices: SS, EIVALS, and EIVECTS</span>
+0117 <span class="comment">%              that StStatesAnalysis returns (See description below)</span>
+0118 <span class="comment">%</span>
+0119 <span class="comment">% OUTPUTS:</span>
+0120 <span class="comment">%  SS:         NxS matrix where N is the total number</span>
+0121 <span class="comment">%              of the model variables, and S is the number of the found</span>
+0122 <span class="comment">%              steady states. The steady states are found as For each i =</span>
+0123 <span class="comment">%              1:S, SS(i, :) is one of the found steady states.</span>
+0124 <span class="comment">%</span>
+0125 <span class="comment">%  RESID:      scalar value. 2-matrix-norm residual for the SS.</span>
+0126 <span class="comment">%</span>
+0127 <span class="comment">%  EIVALS:</span>
+0128 <span class="comment">%</span>
+0129 <span class="comment">%  EIVECTS:</span>
+0130 <span class="comment">%</span>
+0131 <span class="comment">%</span>
+0132 <span class="comment">% AUTHORS: M. Yu. Khristichenko, Yu. M. Nechepurenko, E. V. Sklyarova</span>
+0133 <span class="comment">% VERSION: 21.09.2021</span>
+0134 <span class="comment">%</span>
+0135 
+0136 [filepath,~,~] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0137 addpath(genpath(filepath));
+0138 
+0139 format long
+0140 
+0141 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0142 <span class="comment">% УСТАНОВКА ПАРАМЕТРОВ:</span>
+0143 <span class="comment">%</span>
+0144 tol=1e-6; <span class="comment">% необходимая точность вычисления стационарного состояния</span>
+0145 <span class="comment">%</span>
+0146 Esolver=2;  <span class="comment">% Решатель частичных проблем:</span>
+0147             <span class="comment">% 1 - метод сингулярной функции</span>
+0148             <span class="comment">% 2 - метод частичных линейных проблем</span>
+0149             deflation=0; <span class="comment">% режим дефляции (-1,0,1,2 либо 3)</span>
+0150 <span class="comment">%</span>
+0151 addinf=0; <span class="comment">% информация о потери ведущего собственного значения (0/1)</span>
+0152           <span class="comment">%+ пошаговой информации о работе решателей частичных проблем (2)</span>
+0153 <span class="comment">%</span>
+0154 p=10; <span class="comment">% требуемое число собственных значений</span>
+0155 ind=0; <span class="comment">% нужно ли отрисовывать собственные значения на комплексной плоскости (0/1)</span>
+0156 
+0157 <span class="comment">%сортируем по возрастанию</span>
+0158 delays=sort(delays);
+0159 
+0160 
+0161 g=pwd;
+0162 mapa=which(<span class="string">'math.exe'</span>);
+0163 mapa=mapa(1:end-8);
+0164 mapa = <span class="string">'C:\Program Files\Wolfram Research\Mathematica\12.0'</span>; <span class="comment">%%%%TODO</span>
+0165 cd(mapa);
+0166 addpath(g);
+0167 SS=SSFinder(coef);
+0168 cd(g);
+0169 SS=SS';
+0170 U0= [0; 0; 0; 0; coef.H_E_0; coef.E_0; coef.H_B_0; coef.B_0; coef.P_0; coef.rho_F*coef.P_0/coef.alpha_F]; <span class="comment">%% TODO depends on the model</span>
+0171 SS=[SS,U0];
+0172 Resid=zeros(1,size(SS,2));
+0173 <span class="keyword">for</span> i=1:size(SS,2)
+0174    <span class="keyword">if</span> <a href="../DIDAN/Functions/Residual.html" class="code" title="function [res]=Residual(S,coef,RHS)">Residual</a>(SS(:,i),coef, RHS)&gt;tol
+0175         l=0;
+0176         [Var,F]=RHS(coef);
+0177         <a href="../DIDAN/Functions/matlabFunction_new.html" class="code" title="function matlabFunction_new(F,filename,vars)">matlabFunction_new</a>(F,<span class="string">'rhsm.m'</span>,Var);
+0178         Y=<a href="rhsm.html" class="code" title="function F=rhsm(in1,in2,in3,in4,in5,in6,varargin)">rhsm</a>(SS(:,i),SS(:,i),SS(:,i),SS(:,i),SS(:,i),SS(:,i))';
+0179         normY=norm(Y,2);
+0180         <span class="keyword">for</span> j=2:size(Var,2)
+0181             <span class="keyword">for</span> k=1:size(Var{1,1},1)
+0182                 F=subs(F,Var{1,j}(k),Var{1,1}(k));
+0183             <span class="keyword">end</span>
+0184         <span class="keyword">end</span>
+0185         Jacob=jacobian(F,Var{1,1});
+0186         <span class="keyword">while</span>(normY&gt;tol)
+0187             jacob1=subs(Jacob,Var{1,1},SS(:,i));
+0188             jacob1=double(jacob1);
+0189             SS(:,i)=SS(:,i)-jacob1\Y;
+0190             l=l+1;
+0191             Y=<a href="rhsm.html" class="code" title="function F=rhsm(in1,in2,in3,in4,in5,in6,varargin)">rhsm</a>(SS(:,i),SS(:,i),SS(:,i),SS(:,i),SS(:,i),SS(:,i))';
+0192             normY=norm(Y,2);
+0193         <span class="keyword">end</span>
+0194    <span class="keyword">end</span>
+0195    Resid(i)=<a href="../DIDAN/Functions/Residual.html" class="code" title="function [res]=Residual(S,coef,RHS)">Residual</a>(SS(:,i),coef, RHS);
+0196 <span class="keyword">end</span>
+0197 
+0198   
+0199 
+0200 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0201 <span class="comment">% II. АНАЛИЗ УСТОЙЧИВОСТИ. ВЫЧИСЛЕНИЕ СОБСТВЕННЫХ ЗНАЧЕНИЙ:</span>
+0202 <span class="comment">%</span>
+0203 EiVals=[];
+0204 EiVects=[];
+0205 <span class="keyword">for</span> k=1:size(SS,2)
+0206     fprintf(1,<span class="string">'Для %d-го стационарного состояния: \n'</span>,k);
+0207     Ui=SS(:,k);
+0208     disp(<span class="string">'Стационарное состояние:'</span>);
+0209     disp(Ui);
+0210     disp(<span class="string">'Невязка:'</span>);
+0211     disp(<a href="../DIDAN/Functions/Residual.html" class="code" title="function [res]=Residual(S,coef,RHS)">Residual</a>(Ui,coef, RHS));
+0212     addinf2=max(addinf-1,0);
+0213     tic
+0214     [Ei,Xi]=<a href="../DIDAN/Functions/EigProbSol.html" class="code" title="function [Ei,Xi,resEi]=EigProbSol(RHS,Uss,coef,vtau,aoev,Esolver,deflation,addinf2,ind,ifig)">EigProbSol</a>(RHS,Ui,coef,delays,p,Esolver,deflation,addinf2,ind,k);
+0215     fprintf(1,<span class="string">'%d ведущих собственных значений: \n'</span>,p);
+0216     disp(Ei);
+0217     toc
+0218     disp(<span class="string">' '</span>);
+0219     EiVals=[EiVals,Ei];
+0220     EiVects=[EiVects,Xi];
+0221 <span class="keyword">end</span>
+0222 
+0223 save(resFile,<span class="string">'EiVals'</span>,<span class="string">'EiVects'</span>,<span class="string">'SS'</span>);</pre></div>
+<hr><address>Generated on Tue 21-Sep-2021 01:27:30 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

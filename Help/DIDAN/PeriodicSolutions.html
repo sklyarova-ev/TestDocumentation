@@ -1,0 +1,790 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of PeriodicSolutions</title>
+  <meta name="keywords" content="PeriodicSolutions">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">DIDAN</a> &gt; PeriodicSolutions.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for DIDAN&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>PeriodicSolutions
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [UEXTR,T,Res,ind]=PeriodicSolutions(coef,nss,RHS,AlgPar, vtau,varname, SS_analysisFile,fileToSaveResult) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Latest revision 21.11.2020
+
+ Вычисление устойчивых периодических решений для модели LCMV
+
+ Внешние процедуры: PloterSS, NumIntegration
+ Папка с внешними процедурами:</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../DIDAN/Functions/Ploter.html" class="code" title="function Ploter(t,U,mark,iclean,h,v,varname,logind)">Ploter</a>	</li><li><a href="NumIntegration.html" class="code" title="function [tnew,Unew]=NumIntegration(coef,vtau,RHS,t,U,Uss,isolver,Tadd,delta,err,interp1_method,iresult,nfig,iclean,h,v,mark,inc,scheme,varname,logind)">NumIntegration</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function z=zfromU(U,D)</a></li><li><a href="#_sub2" class="code">function U=Ufromz(z,D)</a></li><li><a href="#_sub3" class="code">function [Y0,T,UEXTR,UN,tN,Res]=NewtonP(Newtonpars,Y0old,coef,T0,FUNCpars,</a></li><li><a href="#_sub4" class="code">function f=JAC(g,coef,z,h,ksi,T,FUNCpars,interp1_method)</a></li><li><a href="#_sub5" class="code">function f=JACd(g,coef,z,h,ksi,T,FUNCpars,interp1_method)</a></li><li><a href="#_sub6" class="code">function f=JACc(g,coef,z,h,ksi,T,FUNCpars,interp1_method)</a></li><li><a href="#_sub7" class="code">function y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)</a></li><li><a href="#_sub8" class="code">function nfz=NFZ(damp,Y0,coef,x,T,FUNCpars,interp1_method)</a></li><li><a href="#_sub9" class="code">function [Tnew,nfz,UEXTR,UN,tN]=Tcorrection(Y0,coef,Told,FUNCpars,interp1_method,marks,iclean,tpontp, vtau,varname)</a></li><li><a href="#_sub10" class="code">function [x,rinp,rimpl,rexpl,l]=myGMRES(z,coef,f,x0,m,tol,ksi,</a></li><li><a href="#_sub11" class="code">function [x,rinp,rimpl,rexpl,l]=myIDR2(z,coef,f,x0,m,tol,ksi,</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [UEXTR,T,Res,ind]=PeriodicSolutions(coef,nss,RHS,AlgPar, vtau,varname, SS_analysisFile,fileToSaveResult)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Latest revision 21.11.2020</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Вычисление устойчивых периодических решений для модели LCMV</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Внешние процедуры: PloterSS, NumIntegration</span>
+0008 <span class="comment">% Папка с внешними процедурами:</span>
+0009 [filepath,~,~] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0010 addpath(genpath(filepath));
+0011 
+0012 format long
+0013 <span class="comment">%</span>
+0014 <span class="comment">% Внутренние процедуры: zfromU, Ufromz, FUNC, JAC, NFZ, NewtonP,</span>
+0015 <span class="comment">%                       Tcorrection, myGMRES, myIDR2</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0018 <span class="comment">% УСТАНОВКА ПАРАМЕТРОВ:</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Параметры интегратора:</span>
+0022 delta=AlgPar(1); <span class="comment">% шаг сетки</span>
+0023 deltaR=1e-2; <span class="comment">% шаг сетки для вычисления финальной невязки</span>
+0024 scheme=2; <span class="comment">% схема интегрирования: 1 - неявный метод Эйлера,</span>
+0025           <span class="comment">%                       2 - BDF2.</span>
+0026 err=1.0e-10; <span class="comment">% точность метода Ньютона</span>
+0027 interp1_method=<span class="string">'pchip'</span>; <span class="comment">% метод интерполяции: 'linear', 'spline', 'pchip'</span>
+0028 inc=50000; <span class="comment">% инкремент выдачи информации на экран</span>
+0029 <span class="comment">%</span>
+0030 marks={<span class="string">'b-'</span>,<span class="string">'r-'</span>,<span class="string">'g-'</span>,<span class="string">'g.'</span>,<span class="string">'b.'</span>,<span class="string">'rx'</span>}; <span class="comment">% маркеры для отрисовки развития</span>
+0031                                        <span class="comment">% возмущения и собственных значений</span>
+0032 <span class="comment">%</span>
+0033 v=2; <span class="comment">%количество картинок по вертикали</span>
+0034 h=5; <span class="comment">%количество картинок по горизонтали</span>
+0035 logind=0; <span class="comment">%выбор между лоагрифмическим масштабом картинок (1) и обычным (0)</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Параметры первого этапа (метода установления):</span>
+0038 <span class="comment">%</span>
+0039 maxTE=1000;     <span class="comment">% максимальный допустимый период ведущей моды</span>
+0040 epsilon=AlgPar(2); <span class="comment">% относительная норма ведущей моды</span>
+0041 Ne=AlgPar(3); <span class="comment">% время одного этапа интегрирования возмущенного стационарного</span>
+0042           <span class="comment">% состояния в периодах ведущей моды</span>
+0043 Nfmax=AlgPar(5);  <span class="comment">% максимальное число этапов интегрирования</span>
+0044 thetaV=AlgPar(4); <span class="comment">% максимальное относительное отклонение Vmax</span>
+0045                 <span class="comment">% на двух соседних этапах (для критерия останова)</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">% Параметры второго этапа (вычисление периода):</span>
+0048 <span class="comment">%</span>
+0049 epsilonT=AlgPar(8); <span class="comment">% относительная длина полуинтервала вариации периода</span>
+0050 tolV=AlgPar(6); <span class="comment">% значение tolV для сокращение отрезка</span>
+0051 rho=AlgPar(7); <span class="comment">% часть от максимальной высоты пика, ниже которой игнорируются пики в спектре периодического решения</span>
+0052 <span class="comment">%</span>
+0053 <span class="comment">% Параметры третьего этапа (метода Ньютона):</span>
+0054 N_NM=AlgPar(12);     <span class="comment">% максимальное число шагов метода Ньютона</span>
+0055 tolNM=AlgPar(13);
+0056 ksi=AlgPar(11); <span class="comment">% для вычисления Якобиана</span>
+0057 minrat=1.0001; <span class="comment">% минимальное допустимое отношение nfzold/nfz</span>
+0058 <span class="comment">%</span>
+0059 idamper=2;  <span class="comment">% idamper=1 =&gt; damper=qdamp*exp(-pdamp*ld)</span>
+0060             <span class="comment">% idamper=2 =&gt; damper is computed based on fminbnd</span>
+0061 <span class="comment">% параметры для idamper=1:</span>
+0062 ld0=0;     <span class="comment">% начальное значение ld</span>
+0063 ldmax=15;  <span class="comment">% максимальное значение ld</span>
+0064 pdamp=1.0;          
+0065 qdamp=1.0; 
+0066 <span class="comment">%</span>
+0067 linsolv=2; <span class="comment">% linsolv=1 =&gt; GMRES, linsolv=2 =&gt; IDR2</span>
+0068 tolLS=AlgPar(10);
+0069 N_LS=AlgPar(9); <span class="comment">% максимальная размерность подпространства Крылова</span>
+0070 mrest=0; <span class="comment">% максимальное число рестартов</span>
+0071 <span class="comment">%</span>
+0072 Newtonpars=[N_NM;tolNM;ksi;minrat;idamper;ld0;ldmax;pdamp;qdamp;<span class="keyword">...</span>
+0073             linsolv;tolLS;N_LS;mrest]; 
+0074 <span class="comment">%</span>
+0075 <span class="comment">%</span>
+0076 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0077 <span class="comment">% ИНИЦИАЛИЗАЦИЯ:</span>
+0078 <span class="comment">%</span>
+0079 <span class="comment">% Считывание параметров модели, стационарных состояний и информации об их</span>
+0080 <span class="comment">% устойчивости:</span>
+0081 load(SS_analysisFile,<span class="string">'EiValues'</span>,<span class="string">'EiVectors'</span>,<span class="string">'ss'</span>);
+0082 Uss=ss(:,nss);
+0083 D=Uss;
+0084 <span class="comment">%</span>
+0085 vtau = sort(vtau); 
+0086 vm=ceil(vtau/delta);
+0087 mp=vm(end);  
+0088 <span class="comment">%</span>
+0089 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0090 <span class="comment">% I.РАСЧЕТ УСТОЙЧИВОГО ПЕРИОДИЧЕСКОГО РЕШЕНИЯ МЕТОДОМ УСТАНОВЛЕНИЯ:</span>
+0091 <span class="comment">%</span>
+0092 <span class="comment">% Интегрирование стационарного состояния, возмущенного ведущей модой:</span>
+0093 <span class="comment">%</span>
+0094 LeadingE=EiValues(1,nss)
+0095 <span class="keyword">if</span> abs(imag(LeadingE))&gt;=(2*pi)/maxTE
+0096    TE=2*pi/abs(imag(LeadingE))
+0097    TT=Ne*TE
+0098    TTmax=Nfmax*TT
+0099 <span class="keyword">else</span> 
+0100    disp(<span class="string">'слишком маленькая мнимая часть ведущего собственного значения'</span>)  
+0101    <span class="keyword">return</span>
+0102 <span class="keyword">end</span> 
+0103 <span class="comment">%</span>
+0104 LeadingX=EiVectors(:,(nss-1)*size(EiVectors,2)/size(ss,2)+1);
+0105 LeadingX=LeadingX/norm(LeadingX);
+0106 <span class="comment">%</span>
+0107 tnew=(-mp:1:0)*delta;
+0108 Unew=Uss*ones(1,mp+1)+epsilon*real(LeadingX*exp(tnew*LeadingE));
+0109 <span class="keyword">if</span>(sum(sum(Unew&lt;0))&gt;0)
+0110    disp(<span class="string">'имеется отрицательное начальное значение'</span>) 
+0111    <span class="keyword">return</span>
+0112 <span class="keyword">end</span>    
+0113 Vmin=0; 
+0114 Vmax=0; 
+0115 N=0;
+0116 pass=1;
+0117 tic
+0118 <span class="keyword">while</span> pass==1
+0119     <span class="keyword">if</span> N==0
+0120         nfig=1;
+0121     <span class="keyword">else</span>
+0122         nfig=20+N;
+0123     <span class="keyword">end</span>
+0124     <span class="keyword">if</span> (AlgPar(14)==0)
+0125         nfig=0;
+0126     <span class="keyword">end</span>
+0127    [tnew,Unew]=<a href="NumIntegration.html" class="code" title="function [tnew,Unew]=NumIntegration(coef,vtau,RHS,t,U,Uss,isolver,Tadd,delta,err,interp1_method,iresult,nfig,iclean,h,v,mark,inc,scheme,varname,logind)">NumIntegration</a>(coef,vtau,RHS,tnew,Unew,[],1,<span class="keyword">...</span>
+0128                TT,delta,err,interp1_method,4,nfig,1,h,v,marks{1},inc,scheme,varname,logind);
+0129            <span class="keyword">if</span> N==0
+0130               ke=round(TE/delta); 
+0131               ke=ke+mp+1;
+0132               nfz=norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,ke-mp+1:ke),D)-<span class="keyword">...</span>
+0133                       <a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D))*sqrt(delta),2)/norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D))*sqrt(delta),2)
+0134            <span class="keyword">end</span>
+0135    Vminold=Vmin; 
+0136    Vmaxold=Vmax; 
+0137    varVold=Vmaxold-Vminold;
+0138    Vmin=min(Unew(1,:));
+0139    Vmax=max(Unew(1,:));
+0140    varV=Vmax-Vmin;
+0141    fprintf(1,<span class="string">'\n Vmin/Vss=%6.15g\n'</span>,min(Unew(1,:))/Uss(1));
+0142    fprintf(1,<span class="string">'\n Vmax/Vss=%6.15g\n\n'</span>,max(Unew(1,:))/Uss(1));
+0143    N=N+1;
+0144    <span class="keyword">if</span> N&gt;1&amp;&amp;(N==Nfmax||abs(varVold-varV)&lt;thetaV*varVold); pass=2; <span class="keyword">end</span>
+0145 <span class="keyword">end</span> 
+0146 N=N
+0147 nfz=norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,ke-mp+1:ke),D)-<span class="keyword">...</span>
+0148                      <a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D))*sqrt(delta),2)/norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D))*sqrt(delta),2)
+0149 toc  
+0150 <span class="comment">%</span>
+0151 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0152 <span class="comment">% II. ВЫЧИСЛЕНИЕ МИНИМАЛЬНОГО ПЕРИОДА:</span>
+0153 <span class="comment">%</span>
+0154 <span class="comment">% 1. Обрезка интервала:</span>
+0155 <span class="comment">%</span>
+0156 Tl=size(tnew,2);
+0157 Vnew=Unew(1,:);
+0158 tic
+0159 l=0;
+0160 resid=1;
+0161 morj=0;
+0162 <span class="keyword">while</span> morj==0
+0163     <span class="keyword">while</span> resid&gt;tolV
+0164         l=l+1;
+0165         resid=norm((Vnew(Tl-mp:Tl)/Uss(1)-Vnew(l:l+mp)/Uss(1)),2)/(norm((Vnew(Tl-mp:Tl)/Uss(1)),2));
+0166     <span class="keyword">end</span>
+0167     <span class="keyword">if</span> (l&lt;Tl-mp) &amp;&amp; (norm((Vnew(Tl-mp:Tl)/Uss(1)-Vnew(l+1:l+mp+1)/Uss(1)),2)*delta/(norm((Vnew(Tl-mp:Tl)/Uss(1)),2)*delta)&lt;resid)
+0168        <span class="keyword">while</span> norm((Vnew(Tl-mp:Tl)/Uss(1)-Vnew(l+1:l+mp+1)/Uss(1)),2)*delta/(norm((Vnew(Tl-mp:Tl)/Uss(1)),2)*delta)<span class="keyword">...</span>
+0169            &lt;norm((Vnew(Tl-mp:Tl)/Uss(1)-Vnew(l:l+mp)/Uss(1)),2)*delta/(norm((Vnew(Tl-mp:Tl)/Uss(1)),2)*delta)
+0170        l=l+1;
+0171        <span class="keyword">end</span>
+0172        morj=1;
+0173     <span class="keyword">else</span>
+0174         morj=1;
+0175     <span class="keyword">end</span>
+0176 <span class="keyword">end</span>
+0177 <span class="comment">%</span>
+0178 <span class="keyword">if</span> l&lt;Tl-mp
+0179     tnew=tnew(l+mp:end);
+0180     Vnew=Vnew(l+mp:end);  
+0181 <span class="keyword">else</span>
+0182    disp(<span class="string">'период не найден'</span>) 
+0183    ind=0;
+0184    UEXTR=0;
+0185    T=0;
+0186    <span class="keyword">return</span> 
+0187 <span class="keyword">end</span>
+0188 <span class="comment">%</span>
+0189 <span class="comment">% 2. Оценка минимального периода на основе разложения V в ряд Фурье:</span>
+0190 <span class="comment">%</span>
+0191 Tl=size(tnew,2);
+0192 DT=tnew(Tl)-tnew(1);
+0193 Vnew=Vnew-Uss(1);
+0194 y = fft(Vnew);
+0195 ynew=abs(y)/Tl;
+0196 Y=max(ynew);
+0197 [~,locs]=findpeaks(ynew,<span class="string">'MinPeakHeight'</span>,rho*Y);
+0198 locs=locs(locs&lt;=Tl/2);
+0199 locs=locs-1;
+0200 locssize=size(locs,2);
+0201 <span class="keyword">if</span> locssize==0
+0202    ind=0;
+0203    UEXTR=0;
+0204    T=0;
+0205    disp(<span class="string">'период не найден'</span>)
+0206    disp(1)
+0207    <span class="keyword">return</span>  
+0208 <span class="keyword">end</span>
+0209 <span class="keyword">while</span> locssize&gt;1
+0210     locsnew=[];
+0211     <span class="keyword">for</span> i=1:size(locs,2)-1
+0212         locsnew=[locsnew,gcd(locs(i),locs(i+1))];
+0213     <span class="keyword">end</span>
+0214     locs=locsnew;
+0215     locssize=size(locs,2);
+0216 <span class="keyword">end</span>
+0217 T=DT/locs
+0218 <span class="comment">%</span>
+0219 <span class="comment">% 3. Корректировка периода:</span>
+0220 <span class="comment">%</span>
+0221 Tmin=(1.0-epsilonT)*T;
+0222 Tmax=(1.0+epsilonT)*T; 
+0223 told=(-mp:1:0)*delta;
+0224 Uold=Unew(:,end-mp:end);
+0225 <span class="comment">%</span>
+0226 [tnew,Unew]=<a href="NumIntegration.html" class="code" title="function [tnew,Unew]=NumIntegration(coef,vtau,RHS,t,U,Uss,isolver,Tadd,delta,err,interp1_method,iresult,nfig,iclean,h,v,mark,inc,scheme,varname,logind)">NumIntegration</a>(coef,vtau,RHS,told,Uold,[],1,<span class="keyword">...</span>
+0227            Tmax,delta,err,interp1_method,1,0,0,h,v,[],inc,scheme,varname,logind);  
+0228 <span class="comment">%</span>
+0229 [~,Kmin]=min(abs(tnew-Tmin));
+0230 Kmax=size(tnew,2);
+0231 RES=zeros(1,Kmax);
+0232 <span class="keyword">for</span> k=Kmin:Kmax
+0233    RES(k)=norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,k-mp+1:k),D)-<span class="keyword">...</span>
+0234                     <a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D))*sqrt(delta),2)/norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D))*sqrt(delta),2);
+0235 <span class="keyword">end</span>
+0236 [nfz,nT]=min(RES(Kmin:Kmax));
+0237 nT=nT+Kmin-1;
+0238 T=tnew(nT);
+0239 toc
+0240 T_Tmin_Tmax=[T,Tmin,Tmax]
+0241 nfz
+0242 Res=nfz;
+0243 fprintf(1,<span class="string">'\n Vmin/Vss=%6.8g\n'</span>,min(Unew(1,:))/Uss(1));
+0244 fprintf(1,<span class="string">'\n Vmax/Vss=%6.8g\n\n'</span>,max(Unew(1,:))/Uss(1));
+0245 <span class="keyword">if</span> (AlgPar(14))
+0246     figure(3) 
+0247     <a href="../DIDAN/Functions/Ploter.html" class="code" title="function Ploter(t,U,mark,iclean,h,v,varname,logind)">Ploter</a>(tnew(1:nT),Unew(:,1:nT),marks{1},0,h,v,varname,logind)
+0248     log=tnew&lt;=0;
+0249     <a href="../DIDAN/Functions/Ploter.html" class="code" title="function Ploter(t,U,mark,iclean,h,v,varname,logind)">Ploter</a>(tnew(log),Unew(:,log),marks{2},0,h,v,varname,logind)
+0250 <span class="keyword">end</span>
+0251 <span class="comment">%</span>
+0252 <span class="comment">% Отрисовка найденного решения:</span>
+0253 <span class="comment">%</span>
+0254 TT=10*T;
+0255 Uold=Unew(:,1:vm(end)+1);
+0256 <span class="keyword">if</span> (AlgPar(14)==0)
+0257         nfig=0;
+0258 <span class="keyword">else</span>
+0259     nfig=4;
+0260 <span class="keyword">end</span>
+0261 [tnew,Unew]=<a href="NumIntegration.html" class="code" title="function [tnew,Unew]=NumIntegration(coef,vtau,RHS,t,U,Uss,isolver,Tadd,delta,err,interp1_method,iresult,nfig,iclean,h,v,mark,inc,scheme,varname,logind)">NumIntegration</a>(coef,vtau,RHS,told,Uold,[],1,<span class="keyword">...</span>
+0262                    TT,delta,err,interp1_method,4,nfig,1,h,v,marks{1},inc,scheme,varname,logind); 
+0263 log=tnew&lt;=0;
+0264 <span class="keyword">if</span> (AlgPar(14))
+0265 <a href="../DIDAN/Functions/Ploter.html" class="code" title="function Ploter(t,U,mark,iclean,h,v,varname,logind)">Ploter</a>(tnew(log),Unew(:,log),marks{2},0,h,v,varname,logind)
+0266 <span class="keyword">end</span>
+0267 nov=size(Unew,1);
+0268 UEXTR=[];
+0269 <span class="keyword">for</span> ik=1:nov
+0270     UEXTR=[UEXTR;min(Unew(ik,:)),max(Unew(ik,:))];
+0271 <span class="keyword">end</span>
+0272 <span class="comment">%</span>
+0273 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0274 <span class="comment">% III. УТОЧНЕНИЕ ПЕРИОДИЧЕСКОГО РЕШЕНИЯ МЕТОДОМ НЬЮТОНОВСКОГО ТИПА:</span>
+0275 <span class="comment">%</span>
+0276 FUNCpars=[delta;err;inc;scheme;epsilonT;logind;D];
+0277 Y0=<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Uold(:,2:mp+1),D);
+0278 tpontp=AlgPar(14);
+0279 <span class="keyword">if</span> nfz&gt;tolNM
+0280 [Y0,T,UEXTR,UN,tN,Res]=<span class="keyword">...</span>
+0281            <a href="#_sub3" class="code" title="subfunction [Y0,T,UEXTR,UN,tN,Res]=NewtonP(Newtonpars,Y0old,coef,T0,FUNCpars,">NewtonP</a>(Newtonpars,Y0,coef,T,FUNCpars,interp1_method,5,marks,tpontp);
+0282 <span class="keyword">else</span>
+0283     UN=Unew(:,1:nT);
+0284     tN=tnew(1:nT);
+0285 <span class="keyword">end</span>
+0286 disp(<span class="string">'min:'</span>)
+0287 <span class="keyword">for</span> ik=1:nov
+0288     disp(UEXTR(ik,1));
+0289 <span class="keyword">end</span>
+0290 disp(<span class="string">'max:'</span>)
+0291 <span class="keyword">for</span> ik=1:10
+0292     disp(UEXTR(ik,2));
+0293 <span class="keyword">end</span>
+0294 <span class="comment">%</span>
+0295 <span class="comment">% Запись всех результатов в выходной файл:</span>
+0296 <span class="comment">%</span>
+0297 Tp=T;
+0298 save(fileToSaveResult,<span class="string">'Tp'</span>,<span class="string">'UN'</span>,<span class="string">'tN'</span>);
+0299 U0=<a href="#_sub2" class="code" title="subfunction U=Ufromz(z,D)">Ufromz</a>(Y0,D);
+0300 <span class="keyword">if</span> (AlgPar(14))
+0301 <a href="NumIntegration.html" class="code" title="function [tnew,Unew]=NumIntegration(coef,vtau,RHS,t,U,Uss,isolver,Tadd,delta,err,interp1_method,iresult,nfig,iclean,h,v,mark,inc,scheme,varname,logind)">NumIntegration</a>(coef,vtau,RHS,told,U0,[],1,<span class="keyword">...</span><span class="comment">           </span>
+0302       5*T,delta,err,interp1_method,1,200,1,h,v,<span class="string">'b-'</span>,inc,scheme,varname,logind);
+0303 <span class="keyword">end</span>
+0304 <span class="comment">%</span>
+0305 <span class="comment">% Полная невязка:</span>
+0306 <span class="comment">%</span>
+0307 mp=ceil(vtau(end)/deltaR);
+0308 KT=round(T/deltaR);
+0309 [~,Unew]=<a href="NumIntegration.html" class="code" title="function [tnew,Unew]=NumIntegration(coef,vtau,RHS,t,U,Uss,isolver,Tadd,delta,err,interp1_method,iresult,nfig,iclean,h,v,mark,inc,scheme,varname,logind)">NumIntegration</a>(coef,vtau,RHS,told,U0,[],1,<span class="keyword">...</span>
+0310            2*T,deltaR,err,interp1_method,4,0,1,h,v,<span class="string">'b-'</span>,inc,scheme,varname,logind);
+0311 Fullnorm=norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,mp:mp+KT),D)-<span class="keyword">...</span>
+0312     <a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,mp+KT:mp+2*KT),D))*sqrt(deltaR),2)/norm(<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,mp:mp+KT),D)*sqrt(deltaR),2)
+0313 ind=1;
+0314 
+0315 
+0316 <a name="_sub1" href="#_subfunctions" class="code">function z=zfromU(U,D)</a>
+0317 <span class="comment">%</span>
+0318 <span class="comment">% Latest revision 26.07.2020</span>
+0319 <span class="comment">%</span>
+0320     U=diag(D)\U;
+0321     z=U(:);
+0322 
+0323 <a name="_sub2" href="#_subfunctions" class="code">function U=Ufromz(z,D)</a>
+0324 <span class="comment">%</span>
+0325 <span class="comment">% Latest revision 26.07.2020</span>
+0326 <span class="comment">%</span>
+0327    nov=size(D,1);
+0328    mp=size(z,1)/nov;
+0329    U=reshape(z,nov,mp);
+0330    U=[U(:,1),U];
+0331    U=diag(D)*U;
+0332    
+0333 <a name="_sub3" href="#_subfunctions" class="code">function [Y0,T,UEXTR,UN,tN,Res]=NewtonP(Newtonpars,Y0old,coef,T0,FUNCpars,</a><span class="keyword">...</span>
+0334                                                 interp1_method,nfg,marks,tpontp,vtau)
+0335 <span class="comment">%</span>
+0336 <span class="comment">% Latest revision 20.07.2020</span>
+0337 <span class="comment">%</span>
+0338 <span class="comment">% computes a solution of FUNC(z)=0 with a Newton-type method starting</span>
+0339 <span class="comment">% with z0.</span>
+0340 <span class="comment">%</span>
+0341 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0342 <span class="comment">% ВХОДНЫЕ ПАРАМЕТРЫ И ИХ РЕКОМЕНДУЕМЫЕ ЗНАЧЕНИЯ:</span>
+0343 <span class="comment">% jmax=10 - максимальное число шагов метода Ньютона</span>
+0344 <span class="comment">% tolNewton=1.0e-6</span>
+0345 <span class="comment">% ksi=1.0e-6 - for Jacobian</span>
+0346 <span class="comment">% minrat=1.1 - минимальное допустимое отношение nfzold/nfz</span>
+0347 <span class="comment">%</span>
+0348 <span class="comment">% idamper=1 =&gt; damper=qdamp*exp(-pdamp*ld)</span>
+0349 <span class="comment">% idamper=2 =&gt; damper is computed based on fminbnd</span>
+0350 <span class="comment">% Parameters for the case idamper=1:</span>
+0351 <span class="comment">% ld0=0 - initial value of ld</span>
+0352 <span class="comment">% ldmax=10 - maximal value of ld</span>
+0353 <span class="comment">% pdamp=1.0</span>
+0354 <span class="comment">% qdamp=1.0</span>
+0355 <span class="comment">%</span>
+0356 <span class="comment">% linsolv=1 =&gt; GMRES, linsolv=2 =&gt; IDR2</span>
+0357 <span class="comment">% tollinsolv=1.0e-6</span>
+0358 <span class="comment">% mdim=50 - maximal Krylov subspace dimension</span>
+0359 <span class="comment">% mrest=0 - maximal number of restarts</span>
+0360 <span class="comment">%</span>
+0361 jmax=Newtonpars(1);
+0362 tolNewton=Newtonpars(2);
+0363 ksi=Newtonpars(3);        
+0364 minrat=Newtonpars(4); 
+0365 idamper=Newtonpars(5);  
+0366 ld0=Newtonpars(6);  
+0367 ldmax=Newtonpars(7);  
+0368 pdamp=Newtonpars(8);          
+0369 qdamp=Newtonpars(9); 
+0370 <span class="comment">%</span>
+0371 linsolv=Newtonpars(10); <span class="comment">% linsolv=1 =&gt; GMRES, linsolv=2 =&gt; IDR2</span>
+0372 tollinsolv=Newtonpars(11);
+0373 mdim=Newtonpars(12); <span class="comment">% maximal Krylov subspace dimension</span>
+0374 mrest=Newtonpars(13); <span class="comment">% maximal number of restarts</span>
+0375 <span class="comment">%</span>
+0376 
+0377 delta=FUNCpars(1);
+0378 D=FUNCpars(7:end);
+0379 
+0380 <span class="comment">%</span>
+0381 vtau = sort(vtau); 
+0382 vm=ceil(vtau/delta);
+0383 mp=vm(end);
+0384 <span class="comment">%</span>
+0385 j=0
+0386 Y0=Y0old;
+0387 T=T0;
+0388 fz=<a href="#_sub7" class="code" title="subfunction y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)">FUNC</a>(Y0,coef,T,FUNCpars,interp1_method);
+0389 fz=fz*sqrt(delta);
+0390 UY0=<a href="#_sub2" class="code" title="subfunction U=Ufromz(z,D)">Ufromz</a>(Y0,D);
+0391 nfz=norm(fz,2)/norm(<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(UY0(:,2:mp+1),D)*sqrt(delta),2)
+0392 <span class="comment">%fprintf(1,'\n nfz/norm(z)=%6.8g\n\n',nfz);</span>
+0393 nfzold=minrat*nfz;
+0394 <span class="comment">%</span>
+0395 <span class="keyword">while</span> (nfz&gt;tolNewton&amp;&amp;j&lt;jmax&amp;&amp;nfzold&gt;=minrat*nfz)
+0396    tic
+0397    nfzold=nfz;
+0398    Y0old=Y0;
+0399    logT=true;
+0400    j=j+1  
+0401    k=0;
+0402 <span class="comment">%  solving the system Jac(z)*x=fz</span>
+0403    x=zeros(size(Y0old));
+0404    fz=fz/sqrt(delta);
+0405    rexpl=nfz;
+0406    <span class="keyword">while</span> (k&lt;=mrest&amp;&amp;tollinsolv*nfz&lt;rexpl)
+0407       x0=x;
+0408       <span class="keyword">if</span>(linsolv==1)
+0409          [x,rinp,rimpl,rexpl,l]=<a href="#_sub10" class="code" title="subfunction [x,rinp,rimpl,rexpl,l]=myGMRES(z,coef,f,x0,m,tol,ksi,">myGMRES</a>(Y0old,coef,fz,x0,mdim,tollinsolv*nfz,ksi,<span class="keyword">...</span>
+0410                                                 T,FUNCpars,interp1_method); 
+0411       <span class="keyword">elseif</span>(linsolv==2)                                      
+0412          [x,rinp,rimpl,rexpl,l]=<a href="#_sub11" class="code" title="subfunction [x,rinp,rimpl,rexpl,l]=myIDR2(z,coef,f,x0,m,tol,ksi,">myIDR2</a>(Y0old,coef,fz,x0,mdim,tollinsolv*nfz,ksi,<span class="keyword">...</span>
+0413                                                 T,FUNCpars,interp1_method);
+0414       <span class="keyword">end</span>                                      
+0415       l_rinp_rimpl_rexpl=[l,rinp,rimpl,rexpl]
+0416       k=k+1;
+0417    <span class="keyword">end</span>
+0418 <span class="comment">% the Newton step with damping</span>
+0419     xpos=x(x&gt;0);
+0420     <span class="keyword">if</span> size(xpos,1)==0
+0421         idamper=1; 
+0422         disp(200000);
+0423     <span class="keyword">end</span>
+0424    <span class="keyword">if</span>(idamper==1)
+0425       ldamp=ld0;
+0426       <span class="keyword">while</span> (nfz&gt;=nfzold&amp;&amp;ldamp&lt;=ldmax)
+0427          damper=qdamp*exp(-pdamp*ldamp)
+0428          Y0=Y0old-damper*x;
+0429          <span class="keyword">if</span> sum(Y0&lt;0)==0
+0430             fz=<a href="#_sub7" class="code" title="subfunction y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)">FUNC</a>(Y0,coef,T,FUNCpars,interp1_method);
+0431             fz=fz*sqrt(delta);
+0432             nfz=norm(fz,2)/norm(Y0*sqrt(delta),2)
+0433          <span class="keyword">end</span>   
+0434          ldamp=ldamp+1; 
+0435       <span class="keyword">end</span>
+0436       ld0=max(0,ldamp-2);
+0437       <span class="keyword">if</span>(nfz&gt;nfzold)
+0438          Y0=Y0old;
+0439          nfz=nfzold;
+0440          logT=false;
+0441       <span class="keyword">end</span>    
+0442    <span class="keyword">elseif</span>(idamper==2)
+0443       rel=Y0old(x&gt;0)./x(x&gt;0);
+0444       options = optimset(<span class="string">'TolX'</span>,1e-4);
+0445       damper=fminbnd(@(damp)<a href="#_sub8" class="code" title="subfunction nfz=NFZ(damp,Y0,coef,x,T,FUNCpars,interp1_method)">NFZ</a>(damp,Y0old,coef,x,T,FUNCpars,interp1_method),0,min(rel),options);
+0446       Y0=Y0old-damper*x;
+0447       fz=<a href="#_sub7" class="code" title="subfunction y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)">FUNC</a>(Y0,coef,T,FUNCpars,interp1_method);
+0448       fz=fz*sqrt(delta);
+0449       nfz=norm(fz,2)/norm(Y0*sqrt(delta),2)
+0450       <span class="keyword">if</span>(nfz&gt;nfzold)
+0451          Y0=Y0old;
+0452          nfz=nfzold;
+0453          logT=false;
+0454       <span class="keyword">end</span>  
+0455    <span class="keyword">end</span> 
+0456    <span class="keyword">if</span> logT||j==1
+0457 <span class="comment">% T correction</span>
+0458       figure(nfg+j-1)
+0459       [T,nfz,UEXTR,UN,tN]=<a href="#_sub9" class="code" title="subfunction [Tnew,nfz,UEXTR,UN,tN]=Tcorrection(Y0,coef,Told,FUNCpars,interp1_method,marks,iclean,tpontp, vtau,varname)">Tcorrection</a>(Y0,coef,T,FUNCpars,interp1_method,marks,1,tpontp);
+0460 <span class="comment">%       subplot(221)</span>
+0461 <span class="comment">%       title(['$V$',',   ','$j=$',num2str(j),',   ','$nfz=$',num2str(nfz)],...</span>
+0462 <span class="comment">%                                                     'Interpreter','latex');</span>
+0463    <span class="keyword">end</span>
+0464    Res=nfz;
+0465    toc
+0466 <span class="comment">%    pause</span>
+0467 <span class="keyword">end</span>
+0468                    
+0469 <a name="_sub4" href="#_subfunctions" class="code">function f=JAC(g,coef,z,h,ksi,T,FUNCpars,interp1_method)</a>
+0470 <span class="comment">%</span>
+0471 <span class="comment">% Latest revision 28.11.2020</span>
+0472 <span class="comment">%</span>
+0473 <span class="comment">% computes dFUNC/dz(z)*h</span>
+0474 <span class="comment">%</span>
+0475 f=(<a href="#_sub7" class="code" title="subfunction y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)">FUNC</a>(z+ksi*h,coef,T,FUNCpars,interp1_method)-g)/(ksi);
+0476 
+0477 <a name="_sub5" href="#_subfunctions" class="code">function f=JACd(g,coef,z,h,ksi,T,FUNCpars,interp1_method)</a>
+0478 <span class="comment">%</span>
+0479 <span class="comment">% Latest revision 28.11.2020</span>
+0480 <span class="comment">%</span>
+0481 <span class="comment">% computes dFUNC/dz(z)*h</span>
+0482 <span class="comment">%</span>
+0483 f=(g-<a href="#_sub7" class="code" title="subfunction y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)">FUNC</a>(z-ksi*h,coef,T,FUNCpars,interp1_method))/(ksi);
+0484 
+0485 <a name="_sub6" href="#_subfunctions" class="code">function f=JACc(g,coef,z,h,ksi,T,FUNCpars,interp1_method)</a>
+0486 <span class="comment">%</span>
+0487 <span class="comment">% Latest revision 28.11.2020</span>
+0488 <span class="comment">%</span>
+0489 <span class="comment">% computes dFUNC/dz(z)*h</span>
+0490 <span class="comment">%</span>
+0491 f=(<a href="#_sub7" class="code" title="subfunction y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)">FUNC</a>(z+ksi*h,coef,T,FUNCpars,interp1_method)-<a href="#_sub7" class="code" title="subfunction y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)">FUNC</a>(z-ksi*h,coef,T,FUNCpars,interp1_method))/(2*ksi);
+0492 
+0493 <a name="_sub7" href="#_subfunctions" class="code">function y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)</a>
+0494 <span class="comment">%</span>
+0495 <span class="comment">% Latest revision 11.01.2018</span>
+0496 <span class="comment">%</span>
+0497 vtau = sort(vtau); 
+0498 delta=FUNCpars(1);
+0499 err=FUNCpars(2);
+0500 inc=FUNCpars(3);
+0501 scheme=FUNCpars(4);
+0502 logind=FUNCpars(6);
+0503 D=FUNCpars(7:end);
+0504 <span class="comment">%</span>
+0505 vm=ceil(vtau/delta);
+0506 mp=vm(end);
+0507 t=(-vm(end):1:0)*delta;
+0508 U=<a href="#_sub2" class="code" title="subfunction U=Ufromz(z,D)">Ufromz</a>(Y0,D);
+0509 [~,Unew]=<a href="NumIntegration.html" class="code" title="function [tnew,Unew]=NumIntegration(coef,vtau,RHS,t,U,Uss,isolver,Tadd,delta,err,interp1_method,iresult,nfig,iclean,h,v,mark,inc,scheme,varname,logind)">NumIntegration</a>(coef,vtau,RHS,t,U,[],1,<span class="keyword">...</span>
+0510                           T,delta,err,interp1_method,3,0,0,2,2,<span class="string">'r-'</span>,inc,scheme,varname,logind);
+0511 y=<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D)-<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(U(:,2:mp+1),D);
+0512 
+0513 
+0514 
+0515 <a name="_sub8" href="#_subfunctions" class="code">function nfz=NFZ(damp,Y0,coef,x,T,FUNCpars,interp1_method)</a>
+0516 <span class="comment">%</span>
+0517 <span class="comment">% Latest revision 07.01.2018</span>
+0518 delta=FUNCpars(1);
+0519 <span class="comment">%</span>
+0520 Y0(Y0-damp*x&lt;0)=0;
+0521 fz=<a href="#_sub7" class="code" title="subfunction y=FUNC(Y0,coef,T,FUNCpars,interp1_method, vtau,varname)">FUNC</a>(Y0-damp*x,coef,T,FUNCpars,interp1_method);
+0522 fz=fz*sqrt(delta);
+0523 nfz=norm(fz,2);<span class="comment">%/norm((Y0-damp*x)*sqrt(delta),2);</span>
+0524 damp_nfz=[damp,nfz]
+0525 
+0526 <a name="_sub9" href="#_subfunctions" class="code">function [Tnew,nfz,UEXTR,UN,tN]=Tcorrection(Y0,coef,Told,FUNCpars,interp1_method,marks,iclean,tpontp, vtau,varname)</a>
+0527 <span class="comment">%</span>
+0528 <span class="comment">% Latest revision 11.01.2018</span>
+0529 <span class="comment">%</span>
+0530 <span class="comment">%</span>
+0531 delta=FUNCpars(1);
+0532 err=FUNCpars(2);
+0533 inc=FUNCpars(3);
+0534 scheme=FUNCpars(4);
+0535 logind=FUNCpars(6);
+0536 D=FUNCpars(7:end);
+0537 varT=FUNCpars(5);
+0538 Tmin=(1.0-varT)*Told;
+0539 Tmax=(1.0+varT)*Told;
+0540 <span class="comment">%</span>
+0541 vtau = sort(vtau); 
+0542 vm=ceil(vtau/delta);
+0543 mp=vm(end);
+0544 told=(-mp:1:0)*delta;
+0545 Uold=<a href="#_sub2" class="code" title="subfunction U=Ufromz(z,D)">Ufromz</a>(Y0,D);
+0546 <span class="comment">%</span>
+0547 [tnew,Unew]=<a href="NumIntegration.html" class="code" title="function [tnew,Unew]=NumIntegration(coef,vtau,RHS,t,U,Uss,isolver,Tadd,delta,err,interp1_method,iresult,nfig,iclean,h,v,mark,inc,scheme,varname,logind)">NumIntegration</a>(coef,vtau,RHS,told,Uold,[],1,<span class="keyword">...</span>
+0548             Tmax,delta,err,interp1_method,1,0,0,2,2,[],inc,scheme,varname,logind);
+0549 [~,Kmin]=min(abs(tnew-Tmin));
+0550 Kmax=size(tnew,2);
+0551 RES=zeros(1,Kmax);
+0552 <span class="keyword">for</span> k=Kmin:Kmax
+0553    RES(k)=norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,k-mp+1:k),D)-<span class="keyword">...</span>
+0554                      <a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D))*sqrt(delta),2)/norm((<a href="#_sub1" class="code" title="subfunction z=zfromU(U,D)">zfromU</a>(Unew(:,2:mp+1),D))*sqrt(delta),2);
+0555 <span class="keyword">end</span>
+0556 [nfz,nT]=min(RES(Kmin:Kmax));
+0557 nT=nT+Kmin-1;
+0558 Tnew=tnew(nT);
+0559 UN=Unew(:,1:nT);
+0560 tN=tnew(1:nT);
+0561 [~,I]=max(Unew(1,1:nT));
+0562 <span class="keyword">if</span> (tpontp)
+0563 <a href="../DIDAN/Functions/Ploter.html" class="code" title="function Ploter(t,U,mark,iclean,h,v,varname,logind)">Ploter</a>(tnew(1:nT),Unew(:,1:nT),marks{1},iclean,2,5,varname,logind)
+0564 log=tnew&lt;=0;
+0565 <a href="../DIDAN/Functions/Ploter.html" class="code" title="function Ploter(t,U,mark,iclean,h,v,varname,logind)">Ploter</a>(tnew(log),Unew(:,log),marks{2},0,2,5,varname,logind)
+0566 <span class="keyword">end</span>
+0567 T_Tmin_Tmax=[Tnew,Tmin,Tmax]
+0568 nfz=nfz
+0569 <span class="comment">%fprintf(1,'\n nfz/norm(z)=%6.8g\n\n',nfz/norm(zfromU(Unew(:,2:mp+1),D)*sqrt(delta),2));</span>
+0570 nov=size(Unew,1);
+0571 UEXTR=[];
+0572 <span class="keyword">for</span> ik=1:nov
+0573     UEXTR=[UEXTR;min(Unew(ik,:)),max(Unew(ik,:))];
+0574 <span class="keyword">end</span>
+0575 fprintf(1,<span class="string">'\n Vmin/Vss=%6.8g\n'</span>,UEXTR(1,1)/D(1));
+0576 fprintf(1,<span class="string">'\n Vmax/Vss=%6.8g\n\n'</span>,UEXTR(1,2)/D(1));
+0577 
+0578 
+0579 <a name="_sub10" href="#_subfunctions" class="code">function [x,rinp,rimpl,rexpl,l]=myGMRES(z,coef,f,x0,m,tol,ksi,</a><span class="keyword">...</span>
+0580                                                  T,FUNCpars,interp1_method)
+0581 <span class="comment">%</span>
+0582 <span class="comment">% Latest revision 11.01.2018</span>
+0583 <span class="comment">%</span>
+0584 <span class="comment">% Solves the system JAC(z)x = f with GMRES</span>
+0585 <span class="comment">%</span>
+0586 <span class="comment">% On input:</span>
+0587 <span class="comment">% x0 is an initial guess.</span>
+0588 <span class="comment">% m&gt;1 is the maximal size of Krylov subspace.</span>
+0589 <span class="comment">% tol is a tolerance for the stopping criterion: norm(impicit residual)&lt;=tol.</span>
+0590 <span class="comment">%</span>
+0591 <span class="comment">% On output:</span>
+0592 <span class="comment">% x is is an approximate solution.</span>
+0593 <span class="comment">% rinp is the initial residual.</span>
+0594 <span class="comment">% rimpl is the final impicit residual</span>
+0595 <span class="comment">% rexpl is the final expicit residual</span>
+0596 <span class="comment">% l is the dimension of the Krylov subspace.</span>
+0597    v=f-<a href="#_sub4" class="code" title="subfunction f=JAC(g,coef,z,h,ksi,T,FUNCpars,interp1_method)">JAC</a>(f,coef,z,x0,ksi,T,FUNCpars,interp1_method);
+0598    hh=norm(v);
+0599    rinp=hh; 
+0600    l=0;
+0601    <span class="keyword">if</span>(hh&lt;=tol)
+0602       rimpl=hh;
+0603       x=x0;
+0604       clear v
+0605    <span class="keyword">else</span>
+0606       vnew=v;
+0607       v=[];
+0608       h=zeros(m,m);
+0609       c=zeros(m,1);
+0610       s=zeros(m,1);
+0611       y=zeros(m+1,1);
+0612       y(1)=hh;
+0613       rimpl=hh; 
+0614 <span class="comment">%</span>
+0615 <span class="comment">%  main loop</span>
+0616 <span class="comment">%</span>
+0617       <span class="keyword">while</span> (l&lt;m &amp;&amp; rimpl&gt;tol)
+0618          v=[v,vnew]; 
+0619          l=l+1;
+0620          v(:,l)=v(:,l)/hh;
+0621          vnew=<a href="#_sub4" class="code" title="subfunction f=JAC(g,coef,z,h,ksi,T,FUNCpars,interp1_method)">JAC</a>(f,coef,z,v(:,l),ksi,T,FUNCpars,interp1_method);
+0622          h(1:l,l)=v'*vnew;
+0623          vnew=vnew-v*h(1:l,l);
+0624          hh=norm(vnew);
+0625          <span class="keyword">for</span> j=1:l-1
+0626             h(j:j+1,l)=[c(j)',s(j);-s(j),c(j)]* h(j:j+1,l);
+0627          <span class="keyword">end</span>
+0628          <span class="keyword">if</span>(hh~=0.0)
+0629             ww=norm([abs(h(l,l));hh]);
+0630             c(l)=h(l,l)/ww;
+0631             s(l)=hh/ww;
+0632             y(l+1)=-s(l)*y(l);
+0633             y(l)=c(l)'*y(l);
+0634             h(l,l)=ww;
+0635             rimpl=abs(y(l+1));
+0636          <span class="keyword">else</span>
+0637             rimpl=0.0;
+0638          <span class="keyword">end</span>    
+0639       <span class="keyword">end</span>
+0640 <span class="comment">%</span>
+0641 <span class="comment">% compute the approximate solution</span>
+0642 <span class="comment">%</span>
+0643       y(l)=y(l)/h(l,l);
+0644       <span class="keyword">for</span> j=l-1:-1:1
+0645          y(j)=(y(j)-h(j,j+1:l)*y(j+1:l))/h(j,j);
+0646       <span class="keyword">end</span>
+0647       <span class="comment">%hdiag=diag(h);</span>
+0648       <span class="comment">%hd=hdiag(1:l)</span>
+0649       x=x0+v*y(1:l);
+0650       rexpl=norm(f-<a href="#_sub4" class="code" title="subfunction f=JAC(g,coef,z,h,ksi,T,FUNCpars,interp1_method)">JAC</a>(f,coef,z,x,ksi,T,FUNCpars,interp1_method),2);
+0651       clear v vnew h c s y     
+0652    <span class="keyword">end</span>
+0653    
+0654 <a name="_sub11" href="#_subfunctions" class="code">function [x,rinp,rimpl,rexpl,l]=myIDR2(z,coef,f,x0,m,tol,ksi,</a><span class="keyword">...</span>
+0655                                                  T,FUNCpars,interp1_method)
+0656 <span class="comment">%</span>
+0657 <span class="comment">% Latest revision 11.01.2018</span>
+0658 <span class="comment">%</span>
+0659 <span class="comment">% Solves the system JAC(z)x = f with IDR2</span>
+0660 <span class="comment">%</span>
+0661 <span class="comment">% On input:</span>
+0662 <span class="comment">% x0 is an initial guess.</span>
+0663 <span class="comment">% m&gt;1 is the maximal size of Krylov subspace.</span>
+0664 <span class="comment">% tol is a tolerance for the stopping criterion: norm(impicit residual)&lt;=tol.</span>
+0665 <span class="comment">%</span>
+0666 <span class="comment">% On output:</span>
+0667 <span class="comment">% x is is an approximate solution.</span>
+0668 <span class="comment">% rinp is the initial residual.</span>
+0669 <span class="comment">% rimpl is the final impicit residual</span>
+0670 <span class="comment">% rexpl is the final expicit residual</span>
+0671 <span class="comment">% l is the dimension of the Krylov subspace.</span>
+0672 <span class="comment">%</span>
+0673    u=f-<a href="#_sub4" class="code" title="subfunction f=JAC(g,coef,z,h,ksi,T,FUNCpars,interp1_method)">JAC</a>(f,coef,z,x0,ksi,T,FUNCpars,interp1_method);
+0674    hh=norm(u);
+0675    rinp=hh; 
+0676    <span class="keyword">if</span>(hh&lt;=tol)
+0677       rimpl=hh;
+0678       x=x0;
+0679       clear u
+0680    <span class="keyword">else</span>
+0681       p0=zeros(size(x0));
+0682       p1=p0;
+0683       s0=p0;
+0684       x=x0;
+0685       r=u;
+0686       v=u;
+0687       a11=0;
+0688       a21=1;
+0689       omg0=0;
+0690       omg1=0;
+0691 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0692 <span class="comment">%</span>
+0693 <span class="comment">%  main loop</span>
+0694 <span class="comment">%</span>
+0695       l=0;     
+0696       <span class="keyword">while</span> (l&lt;m &amp;&amp; hh&gt;tol)
+0697          s1=<a href="#_sub4" class="code" title="subfunction f=JAC(g,coef,z,h,ksi,T,FUNCpars,interp1_method)">JAC</a>(f,coef,z,v,ksi,T,FUNCpars,interp1_method);
+0698          l=l+1;
+0699          <span class="keyword">if</span> (l&lt;3 || l==3*floor(l/3))
+0700             tau=(s1'*v)/(s1'*s1);
+0701          <span class="keyword">end</span>
+0702          u=p0;
+0703          p0=p0*omg0+p1*omg1+v*tau;
+0704          p1=u;
+0705          x=x+p0;
+0706          u=r;
+0707          r=v-s1*tau;
+0708          s1=s0;
+0709          s0=u-r;
+0710          hh=norm(r);
+0711          <span class="keyword">if</span> (l==1)
+0712             <span class="comment">%q0=u;</span>
+0713             q0=ones(size(u));
+0714             q0(2:2:end)=0;
+0715             q1=ones(size(u));
+0716             q1(1:2:end)=0;
+0717          <span class="keyword">end</span>
+0718          a12=a11;
+0719          a22=a21;
+0720          b1=q0'*r;
+0721          b2=q1'*r;
+0722          a11=q0'*s0;
+0723          a21=q1'*s0;
+0724          delta=a11*a22-a12*a21;
+0725          omg0=(a22*b1-a12*b2)/delta;
+0726          omg1=(a11*b2-a21*b1)/delta;
+0727          v=r-s0*omg0-s1*omg1;
+0728       <span class="keyword">end</span>
+0729 <span class="comment">%</span>
+0730       rimpl = hh;
+0731       rexpl=norm(f-<a href="#_sub4" class="code" title="subfunction f=JAC(g,coef,z,h,ksi,T,FUNCpars,interp1_method)">JAC</a>(f,coef,z,x,ksi,T,FUNCpars,interp1_method),2);
+0732       <span class="comment">%nmult = nmult+l;</span>
+0733       <span class="comment">%fprintf('              %16.15e\n',rimpl/rinp);</span>
+0734       clear r u v p0 p1 s0 s1 q0 q1 
+0735    <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 21-Sep-2021 01:27:30 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
